@@ -1,0 +1,12 @@
+# 项目依赖列表
+
+fastapi~=0.136.1            # 主框架
+uvicorn                     # 运行
+sqlalchemy>=2.0             # ORM
+aiomysql                    # 数据库连接
+python-jose[cryptography]   # JSON处理
+passlib[argon2]             # 加密库
+python-multipart            # 文件上传
+pydantic[email]             # 验证
+
+# 后续增加：LLM（langchain）、阿里云OCR-SDK、图像处理等
