@@ -17,6 +17,7 @@ from core.database import init_db, engine
 async def lifespan(app: FastAPI):
     # 启动时执行
     await init_db()
+    print("数据库初始化完成")
     yield
     # 关闭时执行
     await engine.dispose()
