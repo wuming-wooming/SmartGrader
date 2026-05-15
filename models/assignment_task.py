@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    BigInteger, VARCHAR, DATETIME, TEXT, FLOAT, INT, SMALLINT, ForeignKey, Index
+    BigInteger, VARCHAR, DATETIME, TEXT, INT, SMALLINT, ForeignKey, Index
 )
 from sqlalchemy.orm import (
     Mapped, mapped_column, relationship
@@ -21,10 +21,9 @@ from core.database import Base
 
 # 仅类型检查时导入，运行时不执行，避免循环依赖
 if TYPE_CHECKING:
-    from models.user import User
-    from models.question_result import QuestionResult
-    from models.report import Report
-    from models.async_task import AsyncTask
+    from models import (
+        User, QuestionResult, Report, AsyncTask
+    )
 
 
 class AssignmentTask(Base):
@@ -59,9 +58,6 @@ class AssignmentTask(Base):
     )
     task_status: Mapped[int] = mapped_column(
         SMALLINT, default=0, comment="任务状态：0=待处理，1=处理中，2=完成，3=失败"
-    )
-    score_total: Mapped[float | None] = mapped_column(
-        FLOAT, comment="作业总分"
     )
     error_msg: Mapped[str | None] = mapped_column(
         TEXT, comment="失败错误信息"

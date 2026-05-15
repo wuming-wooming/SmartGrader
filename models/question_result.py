@@ -10,7 +10,7 @@ from __future__ import annotations  # 延迟解析注解，3.7+支持
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    BigInteger, VARCHAR, TEXT, FLOAT, INT, SMALLINT, JSON, ForeignKey, Index
+    BigInteger, VARCHAR, TEXT, INT, SMALLINT, JSON, ForeignKey, Index, DECIMAL
 )
 from sqlalchemy.orm import (
     Mapped, mapped_column, relationship
@@ -20,7 +20,7 @@ from core.database import Base
 
 # 仅类型检查时导入，运行时不执行，避免循环依赖
 if TYPE_CHECKING:
-    from models.assignment_task import AssignmentTask
+    from models import AssignmentTask
 
 
 class QuestionResult(Base):
@@ -42,7 +42,7 @@ class QuestionResult(Base):
         BigInteger, ForeignKey("assignment_tasks.id", ondelete="CASCADE"), comment="关联任务ID"
     )
     page_num: Mapped[int] = mapped_column(
-        INT, nullable=False, comment="题目所在页码"
+        INT, default=1, nullable=False, comment="题目所在页码"
     )
     question_index: Mapped[int] = mapped_column(
         INT, nullable=False, comment="题目在页面中的序号"
@@ -60,10 +60,10 @@ class QuestionResult(Base):
         SMALLINT, comment="是否正确：1=对，0=错"
     )
     score: Mapped[float] = mapped_column(
-        FLOAT, nullable=False, comment="题目得分"
+        DECIMAL(7, 2), nullable=False, comment="题目得分"
     )
     full_score: Mapped[float] = mapped_column(
-        FLOAT, nullable=False, comment="题目满分"
+        DECIMAL(7, 2), nullable=False, comment="题目满分"
     )
     error_reason: Mapped[str | None] = mapped_column(
         TEXT, comment="错误原因"
