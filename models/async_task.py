@@ -20,7 +20,7 @@ from core.database import Base
 
 # 仅类型检查时导入，运行时不执行，避免循环依赖
 if TYPE_CHECKING:
-    from models.assignment_task import AssignmentTask
+    from models import AssignmentTask
 
 
 class AsyncTask(Base):

@@ -10,7 +10,7 @@ from __future__ import annotations  # 延迟解析注解，3.7+支持
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    BigInteger, TEXT, FLOAT, INT, SMALLINT, JSON, ForeignKey, Index, UniqueConstraint
+    BigInteger, TEXT, INT, SMALLINT, JSON, ForeignKey, Index, UniqueConstraint, DECIMAL
 )
 from sqlalchemy.orm import (
     Mapped, mapped_column, relationship
@@ -20,7 +20,7 @@ from core.database import Base
 
 # 仅类型检查时导入，运行时不执行，避免循环依赖
 if TYPE_CHECKING:
-    from models.assignment_task import AssignmentTask
+    from models import AssignmentTask
 
 
 class Report(Base):
@@ -49,10 +49,10 @@ class Report(Base):
         BigInteger, comment="关联用户ID"
     )
     total_score: Mapped[float] = mapped_column(
-        FLOAT, nullable=False, comment="最终得分"
+        DECIMAL(7, 2), nullable=False, comment="最终得分"
     )
     max_total_score: Mapped[float] = mapped_column(
-        FLOAT, nullable=False, comment="满分"
+        DECIMAL(7, 2), nullable=False, comment="满分"
     )
     correct_count: Mapped[int] = mapped_column(
         INT, nullable=False, comment="做对题目数"
