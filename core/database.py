@@ -26,8 +26,8 @@ engine = create_async_engine(
     echo=False,  # 生产环境设为 False，避免日志冗余
     pool_size=DATABASE_POOL_SIZE,  # 连接池常驻连接数（根据并发量调整）
     max_overflow=DATABASE_MAX_OVERFLOW,  # 允许临时创建的额外连接数
-    pool_timeout=DATABASE_POOL_RECYCLE,  # 获取连接的超时时间（秒）
-    pool_recycle=DATABASE_POOL_TIMEOUT,  # 连接回收时间（秒），避免 MySQL 8小时超时
+    pool_timeout=DATABASE_POOL_TIMEOUT,  # 获取连接的超时时间（秒）
+    pool_recycle=DATABASE_POOL_RECYCLE,  # 连接回收时间（秒），避免 MySQL 8小时超时
     pool_pre_ping=True,  # 每次使用前检查连接是否存活
 )
 
