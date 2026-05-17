@@ -11,7 +11,11 @@ import json
 import os
 import re
 import uuid
+import logging
 
+from pydantic import BaseModel, Field, ValidationError
+
+logger = logging.getLogger(__name__)
 import cv2
 
 from alibabacloud_ocr_api20210707.models import (
@@ -304,32 +308,32 @@ def _extract_coordinate(pos_list: list) -> dict | None:
 def _recover_missing_numbers(containers: list[dict]):
     """
     修复缺失题号的题目（如 LaTeX 公式开头导致 API 丢题号）
-    
+
     例如题2的文本以 $$\frac... 开头，需要恢复为 "2.$$\frac..."
     通过检测前一个题目的题号推断当前题目的期望题号
-    
+
     :param containers: 按顺序排列的题目列表，原地修改
     """
     # 匹配题号前缀："1.", "2.", "(3)", "（4）" 等
     num_prefix_pattern = re.compile(r"^(\d+)[.、．）)]?")  # 标题号
-    
+
     for i, item in enumerate(containers):
         text = item.get("text", "")
         if not text:
             continue
-        
+
         # 检查是否以题号开头
         m = num_prefix_pattern.match(text)
         if m:
             continue  # 已有题号，跳过
-        
+
         # 只有 LaTeX 开头才处理（防止误判）
         if not text.startswith("$$"):
             continue
-        
+
         # 查找前一个容器的题号
         expected_num = i + 1  # 按索引推断（1-based）
-        
+
         # 尝试从上一个容器找题号确认
         if i > 0:
             prev_text = containers[i - 1].get("text", "")
@@ -340,7 +344,7 @@ def _recover_missing_numbers(containers: list[dict]):
                     pass  # 连续编号，确认推断正确
                 else:
                     expected_num = prev_num + 1
-        
+
         item["text"] = f"{expected_num}.{text}"
 
 
@@ -348,7 +352,7 @@ def _validate_coordinate_bounds(coord: dict, image_path: str):
     """
     校验坐标是否在图片范围内，超出时打印警告
     用于快速发现坐标空间不匹配的问题
-    
+
     :param coord: {"x1", "x2", "y1", "y2"}
     :param image_path: 裁剪源图路径
     """
@@ -366,14 +370,14 @@ def _validate_coordinate_bounds(coord: dict, image_path: str):
         warnings.append(f"y1={coord['y1']} 超出图片高度({h})")
     if coord["y2"] <= 0 or coord["y2"] > h:
         warnings.append(f"y2={coord['y2']} 超出图片高度({h})")
-    
+
     coord_w = coord["x2"] - coord["x1"]
     coord_h = coord["y2"] - coord["y1"]
     if coord_w > w * 1.5:
         warnings.append(f"坐标宽度({coord_w})远超图片宽度({w})")
     if coord_h > h * 1.5:
         warnings.append(f"坐标高度({coord_h})远超图片高度({h})")
-    
+
     if warnings:
         print(f"[坐标校验] {'; '.join(warnings)}")
 
@@ -659,3 +663,45 @@ def process_ocr_task(
         except Exception as inner_e:
             print(f"更新数据库状态失败: {inner_e}")
         raise e
+
+class _OCRItemValidator(BaseModel):
+    page_num: int = Field(ge=1)
+    question_index: int = Field(ge=0)
+    subject: str = Field(min_length=1, max_length=20)
+    question_text: str | None = None
+    question_image: str | None = None
+    coordinate: dict | None = None
+    full_score: float = Field(gt=0)
+
+
+class OCRService:
+    """OCR 数据校验与标准化"""
+
+    @staticmethod
+    def validate_ocr_data(ocr_data: list[dict]) -> list[dict]:
+        if not ocr_data:
+            raise ValueError("OCR 数据列表为空")
+
+        validated = []
+        for i, item in enumerate(ocr_data):
+            try:
+                v = _OCRItemValidator(**item)
+            except ValidationError as e:
+                logger.error("OCR 数据第 %d 项校验失败: %s", i, e)
+                raise ValueError(f"OCR 数据第 {i} 项不合法: {e}")
+
+            subject_map = {"数学": "math", "语文": "chinese", "英语": "english"}
+            subject = v.subject.strip()
+            subject = subject_map.get(subject, subject.lower())
+
+            validated.append({
+                "page_num": v.page_num,
+                "question_index": v.question_index,
+                "subject": subject,
+                "question_text": v.question_text or "",
+                "question_image": v.question_image,
+                "coordinate": v.coordinate,
+                "full_score": v.full_score,
+            })
+
+        return validated

@@ -30,13 +30,16 @@ app = FastAPI(
     title="Smart Grader",
     description="基于大模型的中小学作业批改系统",
     version="0.0.1",
-    lifespan=lifespan,
+    lifespan=lifespan
 )
 
 # 注册路由
 from routers import user_router, image_router, ocr_router
+from routers import image_router
+from routers import user_router, grading_router
 
 app.include_router(user_router.router)
+app.include_router(grading_router.router)
 app.include_router(image_router.router)
 app.include_router(ocr_router.router)
 
