@@ -14,4 +14,15 @@ celery                      # 异步任务队列
 redis                       # Celery的Broker和Backend
 eventlet                    # 异步IO库，用于在 Windows 下使用协程/线程池来运行 Celery 任务
 
-# 后续增加：LLM（langchain）、阿里云OCR-SDK、图像处理等
+# 异步任务队列
+celery>=5.4                 # 分布式任务队列
+redis>=5.0                  # Celery Broker + Result Backend
+
+# LLM
+langchain>=0.3              # LLM框架
+langchain-openai>=0.2       # OpenAI兼容接口
+langchain-core>=0.3         # LangChain核心
+
+# 工具
+python-dotenv>=1.0          # 环境变量加载
+oss2>=2.19                  # 阿里云OSS SDK
