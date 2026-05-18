@@ -16,7 +16,7 @@ celery_app = Celery(
     "smart_grader_worker",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=['services.image_service'] # 告诉 Celery 去哪里找任务函数
+    include=['services.image_service', 'services.ocr_service'] # 告诉 Celery 去哪里找任务函数
 )
 
 # Celery 运行配置
