@@ -15,6 +15,7 @@ from core.celery_app import celery_app
 from core.database import SyncSessionLocal
 from models.assignment_task import AssignmentTask
 from models.async_task import AsyncTask
+from services.ocr_service import process_ocr_task
 
 
 # 对输入图片进行 OpenCV 清洗处理, 并保存到输出路径
@@ -181,6 +182,13 @@ def process_homework_image_task(
                 self.request.id,
                 status=2,
                 processed_file=processed_url,
+            )
+            # 图片清洗完成后，自动触发OCR识别与切题
+            # 传入raw图片用于切题（二值化图片切题效果差），处理后的图片用于OCR识别
+            process_ocr_task.delay(
+                assignment_task_id=assignment_task_id,
+                processed_image_path=output_path,
+                raw_image_path=input_path,
             )
             return {"status": "success", "task_id": assignment_task_id}
         else:

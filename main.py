@@ -34,14 +34,20 @@ app = FastAPI(
 )
 
 # 注册路由
-from routers import user_router, image_router
+from routers import user_router, image_router, ocr_router
 
 app.include_router(user_router.router)
 app.include_router(image_router.router)
+app.include_router(ocr_router.router)
 
 # 挂载静态文件目录，让前端可以直接通过 URL 访问图片
 import os
 
 os.makedirs("data/raw_images", exist_ok=True)
 os.makedirs("data/processed_images", exist_ok=True)
+os.makedirs("data/cut_images", exist_ok=True)
 app.mount("/data", StaticFiles(directory="data"), name="data")
+import uvicorn
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)
