@@ -17,7 +17,7 @@ celery_app = Celery(
     "smart_grader",
     broker=CELERY_BROKER_URL,
     backend=CELERY_RESULT_BACKEND,
-    include=["tasks.grading_tasks"],
+    include=["tasks.grading_tasks"]
 )
 
 # Celery 运行配置
@@ -32,5 +32,5 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
     result_expires=86400,
-    worker_concurrency=4,
+    worker_concurrency=4
 )

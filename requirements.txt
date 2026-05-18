@@ -10,8 +10,6 @@ python-multipart            # 文件上传
 pydantic[email]             # 验证
 opencv-python               # 图像处理与摄像头调用
 numpy                       # 矩阵运算与图像处理
-celery                      # 异步任务队列
-redis                       # Celery的Broker和Backend
 eventlet                    # 异步IO库，用于在 Windows 下使用协程/线程池来运行 Celery 任务
 
 # 异步任务队列

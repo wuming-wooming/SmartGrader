@@ -34,8 +34,11 @@ app = FastAPI(
 )
 
 # 注册路由
-from routers import image_router
-from routers import user_router, grading_router
+from routers import (
+    user_router,
+    image_router,
+    grading_router
+)
 
 app.include_router(user_router.router)
 app.include_router(grading_router.router)
