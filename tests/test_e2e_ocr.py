@@ -12,9 +12,22 @@ from models.assignment_task import AssignmentTask
 from sqlalchemy import select
 
 BASE = 'http://127.0.0.1:8001'
-TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwidXNlcm5hbWUiOiJ0ZXN0X2RlYnVnIiwiZXhwIjoxNzc5MTEyNjIzfQ.P7ygPq7dov_V6ExHXse0o4XhRu7__8idvAwrv69fh0k'
 
-img_path = r'c:\Users\ark13\PycharmProjects\FastAPIProject3\res\ima\1 (1).jpg'
+# 先注册新用户获取 token
+reg = requests.post(f'{BASE}/users/register', json={
+    'username': 'ocr_e2e_test', 'email': 'e2e@test.com', 'password': 'test123'
+}).json()
+TOKEN = reg.get('access_token')
+if not TOKEN:
+    # 已存在则登录
+    login = requests.post(f'{BASE}/users/login', json={
+        'username': 'ocr_e2e_test', 'password': 'test123'
+    }).json()
+    TOKEN = login.get('access_token')
+
+print(f'TOKEN: {TOKEN[:20]}...')
+
+img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'res', 'ima', '1 (1).jpg')
 
 print(f'图片: {img_path} ({os.path.getsize(img_path)} bytes)')
 

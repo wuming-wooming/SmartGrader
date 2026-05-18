@@ -59,7 +59,7 @@ class ImageRouter:
         """
 
         # 校验文件类型
-        if not file.content_type.startswith("image/"):
+        if not file.content_type or not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="文件类型必须为图片")
 
         # 生成唯一文件名
