@@ -8,16 +8,17 @@
 
 from datetime import datetime
 
-from sqlalchemy import func, DATETIME
+from sqlalchemy import NullPool, create_engine, func, DATETIME
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from core.config import (
     DATABASE_URL,
+    SYNC_DATABASE_URL,
     DATABASE_POOL_SIZE,
     DATABASE_MAX_OVERFLOW,
     DATABASE_POOL_RECYCLE,
-    DATABASE_POOL_TIMEOUT
+    DATABASE_POOL_TIMEOUT,
 )
 
 # 创建异步引擎 —— 配置连接池参数应对高并发
@@ -31,17 +32,26 @@ engine = create_async_engine(
     pool_pre_ping=True,  # 每次使用前检查连接是否存活
 )
 
+# 创建同步引擎 —— 为 Celery Worker 准备的同步数据库引擎（彻底解决 asyncio + eventlet 死锁）
+sync_engine = create_engine(
+    SYNC_DATABASE_URL,
+    echo=False,
+    poolclass=NullPool,
+)
+
+
 # 异步会话工厂
 AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False  # 提交后不使对象过期，提升性能
+    engine, class_=AsyncSession, expire_on_commit=False  # 提交后不使对象过期，提升性能
 )
+# 同步会话工厂
+SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
 
 
 # 模型基类（所有实体类继承此类）
 class Base(DeclarativeBase):
     """数据库模型基类，封装通用字段"""
+
     # 通用字段：创建时间、更新时间
     created_at: Mapped[datetime] = mapped_column(
         DATETIME, default=func.now(), comment="创建时间"
@@ -61,9 +71,17 @@ async def get_db() -> AsyncSession:
 # noinspection PyUnusedImports
 async def init_db():
     import models  # 别删，用来显示导入所有实体类，避免表未被创建
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
 # 导出供外部使用
-__all__ = ["engine", "AsyncSessionLocal", "get_db", "init_db", "Base"]
+__all__ = [
+    "engine",
+    "AsyncSessionLocal",
+    "get_db",
+    "init_db",
+    "Base",
+    "SyncSessionLocal",
+]
