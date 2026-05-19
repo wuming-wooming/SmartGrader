@@ -11,19 +11,8 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-
-# 密码加密上下文
-pwd_context = CryptContext(
-    schemes=[
-        "argon2",
-        "pbkdf2_sha256"
-    ],
-    default="argon2",
-    deprecated="auto"
-)
 
 # HTTP Bearer 安全方案（用于 Swagger 自动添加授权按钮）
 security = HTTPBearer()

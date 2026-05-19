@@ -10,7 +10,9 @@ OCR识别与切题服务模块
 import json
 import os
 import re
-import uuid
+import logging
+
+from pydantic import BaseModel, Field, ValidationError
 
 import cv2
 
@@ -19,14 +21,11 @@ from alibabacloud_ocr_api20210707.models import (
     RecognizeEduPaperCutRequest,
     RecognizeEduPaperStructedRequest,
 )
-from sqlalchemy import select
 
-from core.celery_app import celery_app
-from core.database import SyncSessionLocal
-from models.assignment_task import AssignmentTask
-from models.async_task import AsyncTask
 from models.question_result import QuestionResult
 from utils.aliyun_client import ocr_client
+
+logger = logging.getLogger(__name__)
 
 # 裁剪图片保存目录
 CUT_DIR = "data/cut_images"
@@ -304,32 +303,32 @@ def _extract_coordinate(pos_list: list) -> dict | None:
 def _recover_missing_numbers(containers: list[dict]):
     """
     修复缺失题号的题目（如 LaTeX 公式开头导致 API 丢题号）
-    
+
     例如题2的文本以 $$\frac... 开头，需要恢复为 "2.$$\frac..."
     通过检测前一个题目的题号推断当前题目的期望题号
-    
+
     :param containers: 按顺序排列的题目列表，原地修改
     """
     # 匹配题号前缀："1.", "2.", "(3)", "（4）" 等
     num_prefix_pattern = re.compile(r"^(\d+)[.、．）)]?")  # 标题号
-    
+
     for i, item in enumerate(containers):
         text = item.get("text", "")
         if not text:
             continue
-        
+
         # 检查是否以题号开头
         m = num_prefix_pattern.match(text)
         if m:
             continue  # 已有题号，跳过
-        
+
         # 只有 LaTeX 开头才处理（防止误判）
         if not text.startswith("$$"):
             continue
-        
+
         # 查找前一个容器的题号
         expected_num = i + 1  # 按索引推断（1-based）
-        
+
         # 尝试从上一个容器找题号确认
         if i > 0:
             prev_text = containers[i - 1].get("text", "")
@@ -340,7 +339,7 @@ def _recover_missing_numbers(containers: list[dict]):
                     pass  # 连续编号，确认推断正确
                 else:
                     expected_num = prev_num + 1
-        
+
         item["text"] = f"{expected_num}.{text}"
 
 
@@ -348,7 +347,7 @@ def _validate_coordinate_bounds(coord: dict, image_path: str):
     """
     校验坐标是否在图片范围内，超出时打印警告
     用于快速发现坐标空间不匹配的问题
-    
+
     :param coord: {"x1", "x2", "y1", "y2"}
     :param image_path: 裁剪源图路径
     """
@@ -366,14 +365,14 @@ def _validate_coordinate_bounds(coord: dict, image_path: str):
         warnings.append(f"y1={coord['y1']} 超出图片高度({h})")
     if coord["y2"] <= 0 or coord["y2"] > h:
         warnings.append(f"y2={coord['y2']} 超出图片高度({h})")
-    
+
     coord_w = coord["x2"] - coord["x1"]
     coord_h = coord["y2"] - coord["y1"]
     if coord_w > w * 1.5:
         warnings.append(f"坐标宽度({coord_w})远超图片宽度({w})")
     if coord_h > h * 1.5:
         warnings.append(f"坐标高度({coord_h})远超图片高度({h})")
-    
+
     if warnings:
         print(f"[坐标校验] {'; '.join(warnings)}")
 
@@ -470,192 +469,44 @@ def _split_merged_questions(text: str, coordinate: dict | None) -> list[dict]:
     return result
 
 
-def _sync_update_db_status(
-    assignment_task_id: int,
-    celery_task_id: str,
-    status: int,
-    error: str = None,
-):
-    """
-    同步更新数据库中的作业任务状态和异步日志状态
-
-    :param assignment_task_id: 作业主表记录ID
-    :param celery_task_id: Celery 分配的任务UUID
-    :param status: 状态码 (2=完成, 3=失败)
-    :param error: 错误信息
-    """
-    with SyncSessionLocal() as db:
-        assignment_task = db.get(AssignmentTask, assignment_task_id)
-        if assignment_task:
-            assignment_task.task_status = status
-            if error:
-                assignment_task.error_msg = error
-
-        stmt = select(AsyncTask).where(AsyncTask.assignment_task_id == assignment_task_id)
-        result = db.execute(stmt)
-        async_log = result.scalars().first()
-        if async_log:
-            async_log.status = status
-            async_log.celery_task_id = celery_task_id
-            if error:
-                async_log.error_detail = error
-        else:
-            new_log = AsyncTask(
-                assignment_task_id=assignment_task_id,
-                celery_task_id=celery_task_id,
-                status=status,
-                error_detail=error if error else None,
-            )
-            db.add(new_log)
-
-        db.commit()
+class _OCRItemValidator(BaseModel):
+    page_num: int = Field(ge=1)
+    question_index: int = Field(ge=0)
+    subject: str = Field(min_length=1, max_length=20)
+    question_text: str | None = None
+    question_image: str | None = None
+    coordinate: dict | None = None
+    full_score: float = Field(gt=0)
 
 
-@celery_app.task(bind=True, name="process_ocr_task")
-def process_ocr_task(
-    self,
-    assignment_task_id: int,
-    processed_image_path: str = None,
-    raw_image_path: str = None,
-):
-    """
-    Celery 后台任务：对图片进行 OCR 识别 + 结构化切题，结果存入 question_results 表
-    切题优先使用 RecognizeEduPaperStructed（精细版结构化切题，内置图像增强），
-    如果 part_info 为空则回退 RecognizeEduPaperCut（旧版）进行重试
-    同时根据坐标从 processed_image 裁剪出题目图片保存到 data/cut_images/
+class OCRService:
+    """OCR 数据校验与标准化"""
 
-    :param self: Celery任务实例自身 (为了获取 request.id)
-    :param assignment_task_id: 数据库中的作业任务ID
-    :param processed_image_path: 清洗后图片的物理路径（用于OCR文字识别 + 裁剪源图）
-    :param raw_image_path: 原始图片的物理路径（用于结构化切题，Structed 内置图像增强）
-    """
-    try:
-        # 决定用哪张图做OCR识别：优先 processed，其次 raw
-        ocr_image_path = processed_image_path if processed_image_path and os.path.exists(processed_image_path) else raw_image_path
-        if not ocr_image_path or not os.path.exists(ocr_image_path):
-            _sync_update_db_status(
-                assignment_task_id,
-                self.request.id,
-                status=3,
-                error=f"OCR识别的图片不存在 (processed={processed_image_path}, raw={raw_image_path})",
-            )
-            return {"status": "failed", "task_id": assignment_task_id}
+    @staticmethod
+    def validate_ocr_data(ocr_data: list[dict]) -> list[dict]:
+        if not ocr_data:
+            raise ValueError("OCR 数据列表为空")
 
-        # 结构化切题优先用原始图片（Structed 内置图像增强，无需预处理）
-        cut_image_path = raw_image_path if raw_image_path and os.path.exists(raw_image_path) else ocr_image_path
-        # 裁剪题目图片时优先用原始图片（坐标来自原始图片空间）
-        crop_source_path = raw_image_path if raw_image_path and os.path.exists(raw_image_path) else processed_image_path
-
-        # 步骤1：整页试卷识别（用 processed 图片获取 OCR 结果用于展示/验证）
-        with open(ocr_image_path, "rb") as f:
-            image_body = f.read()
-        ocr_type = "scan" if ocr_image_path == processed_image_path else "photo"
-        ocr_result = page_recognize(body=image_body, image_type=ocr_type)
-        if not ocr_result or not ocr_result.get("content"):
-            _sync_update_db_status(
-                assignment_task_id,
-                self.request.id,
-                status=3,
-                error="OCR整页识别返回空结果",
-            )
-            return {"status": "failed", "task_id": assignment_task_id}
-
-        # 额外对原始图片做 OCR 用于文本拆分（原始图片 OCR 质量通常更好）
-        ocr_content_for_split = ocr_result.get("content", "")
-        if cut_image_path != ocr_image_path and os.path.exists(cut_image_path):
+        validated = []
+        for i, item in enumerate(ocr_data):
             try:
-                with open(cut_image_path, "rb") as f_raw:
-                    raw_body = f_raw.read()
-                raw_ocr_type = "photo"
-                raw_ocr = page_recognize(body=raw_body, image_type=raw_ocr_type)
-                if raw_ocr and raw_ocr.get("content"):
-                    raw_text = raw_ocr["content"]
-                    if len(raw_text) > len(ocr_content_for_split):
-                        ocr_content_for_split = raw_text
-            except Exception:
-                pass
+                v = _OCRItemValidator(**item)
+            except ValidationError as e:
+                logger.error("OCR 数据第 %d 项校验失败: %s", i, e)
+                raise ValueError(f"OCR 数据第 {i} 项不合法: {e}")
 
-        # 步骤2：结构化切题（主方案）
-        # 使用 RecognizeEduPaperStructed，内置图像增强，无需指定 image_type
-        with open(cut_image_path, "rb") as f:
-            cut_body = f.read()
+            subject_map = {"数学": "math", "语文": "chinese", "英语": "english"}
+            subject = v.subject.strip()
+            subject = subject_map.get(subject, subject.lower())
 
-        cut_result = None
-        used_api = None
+            validated.append({
+                "page_num": v.page_num,
+                "question_index": v.question_index,
+                "subject": subject,
+                "question_text": v.question_text or "",
+                "question_image": v.question_image,
+                "coordinate": v.coordinate,
+                "full_score": v.full_score,
+            })
 
-        # 2a. 先尝试 Structed（精细版结构化切题）
-        try:
-            structed_result = paper_structed(body=cut_body, subject="default", need_rotate=True, output_oricoord=True)
-            if structed_result and structed_result.get("part_info"):
-                # 检查是否有实际的题目内容
-                has_subjects = any(
-                    len(p.get("subject_list", [])) > 0
-                    for p in structed_result["part_info"]
-                )
-                if has_subjects:
-                    cut_result = structed_result
-                    used_api = "RecognizeEduPaperStructed"
-                    print("结构化切题成功：RecognizeEduPaperStructed")
-        except Exception as e:
-            print(f"RecognizeEduPaperStructed 失败，准备回退: {e}")
-
-        # 2b. 回退方案：用旧版 paper_cut 重试
-        if cut_result is None:
-            for try_img_type in ["photo", "scan"]:
-                try:
-                    cut_result = paper_cut(body=cut_body, image_type=try_img_type, output_oricoord=True)
-                    if cut_result:
-                        page_list = cut_result.get("page_list", [])
-                        has_subjects = any(
-                            len(p.get("subject_list", [])) > 0 for p in page_list
-                        )
-                        if has_subjects:
-                            used_api = f"RecognizeEduPaperCut({try_img_type})"
-                            break
-                except Exception as e:
-                    print(f"paper_cut({try_img_type}) 失败: {e}")
-
-        if cut_result is None:
-            _sync_update_db_status(
-                assignment_task_id,
-                self.request.id,
-                status=3,
-                error="所有切题方案均返回空结果",
-            )
-            return {"status": "failed", "task_id": assignment_task_id}
-
-        print(f"切题成功：{used_api}")
-
-        # 步骤3：将切题结果写入 question_results 表，同时裁剪题目图片
-        os.makedirs(CUT_DIR, exist_ok=True)
-        with SyncSessionLocal() as db:
-            saved_count = _save_question_results(
-                db, assignment_task_id, cut_result,
-                crop_source_path=crop_source_path,
-                ocr_content=ocr_content_for_split,
-            )
-
-        # 更新任务状态为完成
-        _sync_update_db_status(
-            assignment_task_id,
-            self.request.id,
-            status=2,
-        )
-
-        return {
-            "status": "success",
-            "task_id": assignment_task_id,
-            "questions_saved": saved_count,
-        }
-
-    except Exception as e:
-        try:
-            _sync_update_db_status(
-                assignment_task_id,
-                self.request.id,
-                status=3,
-                error=f"OCR处理发生异常: {str(e)}",
-            )
-        except Exception as inner_e:
-            print(f"更新数据库状态失败: {inner_e}")
-        raise e
+        return validated
