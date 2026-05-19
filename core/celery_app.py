@@ -17,7 +17,7 @@ celery_app = Celery(
     "smart_grader",
     broker=CELERY_BROKER_URL,
     backend=CELERY_RESULT_BACKEND,
-    include=["tasks.grading_tasks", 'services.image_service', 'services.ocr_service'],
+    include=["tasks.grading_tasks", "tasks.image_tasks", "tasks.ocr_tasks"],
 )
 
 # Celery 运行配置

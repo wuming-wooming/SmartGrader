@@ -1,26 +1,43 @@
-# 项目依赖列表
+# ==============================
+# SmartGrader 项目依赖列表
+# ==============================
 
-fastapi~=0.136.1            # 主框架
-uvicorn                     # 运行
-sqlalchemy>=2.0             # ORM
-aiomysql                    # 数据库连接
-python-jose[cryptography]   # JSON处理
-passlib[argon2]             # 加密库
-python-multipart            # 文件上传
-pydantic[email]             # 验证
-opencv-python               # 图像处理与摄像头调用
-numpy                       # 矩阵运算与图像处理
-eventlet                    # 异步IO库，用于在 Windows 下使用协程/线程池来运行 Celery 任务
+# ---------- Web 框架 ----------
+fastapi~=0.136.1
+uvicorn~=0.47.0
+python-multipart~=0.0.29
 
-# 异步任务队列
-celery>=5.4                 # 分布式任务队列
-redis>=5.0                  # Celery Broker + Result Backend
+# ---------- 数据库 ----------
+sqlalchemy>=2.0
+aiomysql~=0.3.2
+PyMySQL~=1.1                 # Celery Worker 同步驱动
 
-# LLM
-langchain>=0.3              # LLM框架
-langchain-openai>=0.2       # OpenAI兼容接口
-langchain-core>=0.3         # LangChain核心
+# ---------- 认证 ----------
+python-jose[cryptography]~=3.5.0
+passlib[argon2]~=1.7.4
 
-# 工具
-python-dotenv>=1.0          # 环境变量加载
-oss2>=2.19                  # 阿里云OSS SDK
+# ---------- 数据验证 ----------
+pydantic[email]~=2.13.4
+
+# ---------- 图像处理 ----------
+opencv-python~=4.13.0
+numpy~=2.4
+
+# ---------- 异步任务队列 ----------
+celery>=5.4
+redis>=5.0
+eventlet~=0.41.0             # Windows 下 Celery Worker 协程池
+
+# ---------- LLM ----------
+langchain>=0.3
+langchain-openai>=0.2
+langchain-core>=0.3
+
+# ---------- 阿里云服务 ----------
+oss2>=2.19                   # OSS 对象存储
+alibabacloud-ocr-api20210707>=1.0    # OCR 识别 SDK
+alibabacloud-tea-openapi>=0.3        # OpenAPI 基础 SDK
+
+# ---------- 工具 ----------
+python-dotenv>=1.0
+requests~=2.34               # E2E 测试
