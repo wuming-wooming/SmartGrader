@@ -1,13 +1,12 @@
 """
 OCR识别与切题服务模块
-提供阿里云整页试卷识别和题目裁剪功能，通过Celery后台任务串联：读取清洗后图片 → OCR识别 → 切题 → 结果入库
-同时根据切题坐标从清洗后图片裁剪出题目图片，保存到 data/cut_images/
+提供切题结果数据后处理：坐标提取、题目拆分、图片裁剪、结果入库
+OCR 引擎调用已抽象到 services/ocr_engine.py
 
 日期： 2026/5/18
 
 创建者：罗東明
 """
-import json
 import os
 import re
 import logging
@@ -16,101 +15,12 @@ from pydantic import BaseModel, Field, ValidationError
 
 import cv2
 
-from alibabacloud_ocr_api20210707.models import (
-    RecognizeEduPaperOcrRequest,
-    RecognizeEduPaperCutRequest,
-    RecognizeEduPaperStructedRequest,
-)
-
 from models.question_result import QuestionResult
-from utils.aliyun_client import ocr_client
 
 logger = logging.getLogger(__name__)
 
 # 裁剪图片保存目录
 CUT_DIR = "data/cut_images"
-
-
-def page_recognize(
-    body: bytes,
-    image_type: str = "photo",
-    subject: str = "default",
-    output_oricoord: bool = False,
-) -> dict:
-    """
-    整页试卷识别，调用阿里云 RecognizeEduPaperOcr 接口
-
-    :param body: 图片二进制数据
-    :param image_type: 图片类型，photo 或 scan
-    :param subject: 学科标签
-    :param output_oricoord: 是否输出原图坐标
-    :return: 识别结果字典
-    """
-    request = RecognizeEduPaperOcrRequest(
-        image_type=image_type,
-        subject=subject,
-        output_oricoord=output_oricoord,
-    )
-    request.body = body
-    response = ocr_client.recognize_edu_paper_ocr(request)
-    return json.loads(response.body.data)
-
-
-def paper_cut(
-    body: bytes,
-    cut_type: str = "question",
-    image_type: str = "photo",
-    subject: str = "default",
-    output_oricoord: bool = False,
-) -> dict:
-    """
-    试卷切题，调用阿里云 RecognizeEduPaperCut 接口（旧版，保留作为备选）
-
-    :param body: 图片二进制数据
-    :param cut_type: 裁剪类型，默认 question
-    :param image_type: 图片类型，photo 或 scan
-    :param subject: 学科标签
-    :param output_oricoord: 是否输出原图坐标
-    :return: 切题结果字典
-    """
-    request = RecognizeEduPaperCutRequest(
-        cut_type=cut_type,
-        image_type=image_type,
-        subject=subject,
-        output_oricoord=output_oricoord,
-    )
-    request.body = body
-    response = ocr_client.recognize_edu_paper_cut(request)
-    return json.loads(response.body.data)
-
-
-def paper_structed(
-    body: bytes,
-    subject: str = "default",
-    need_rotate: bool = True,
-    output_oricoord: bool = True,
-) -> dict:
-    """
-    精细版结构化切题，调用阿里云 RecognizeEduPaperStructed 接口
-    支持多学科教辅试卷的结构化识别，自动切题并识别文字内容和坐标位置
-    内部自带图像增强（自动旋转、畸变矫正、模糊增强），无需预处理
-
-    返回结构：data → {"part_info": [{"part_title": "选择题", "subject_list": [{"text": ..., "pos_list": ...}]}]}
-
-    :param body: 图片二进制数据
-    :param subject: 学科标签，如 Physics、JHighSchool_Physics 等
-    :param need_rotate: 是否需要自动旋转功能
-    :param output_oricoord: 是否输出原图坐标信息
-    :return: 结构化切题结果字典
-    """
-    request = RecognizeEduPaperStructedRequest(
-        subject=subject,
-        need_rotate=need_rotate,
-        output_oricoord=output_oricoord,
-    )
-    request.body = body
-    response = ocr_client.recognize_edu_paper_structed(request)
-    return json.loads(response.body.data)
 
 
 def _crop_question_image(

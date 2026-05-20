@@ -14,13 +14,8 @@ from core.celery_app import celery_app
 from core.database import SyncSessionLocal
 from models.assignment_task import AssignmentTask
 from models.async_task import AsyncTask
-from services.ocr_service import (
-    page_recognize,
-    paper_cut,
-    paper_structed,
-    _crop_question_image,
-    _save_question_results,
-)
+from services.ocr_engine import get_ocr_engine
+from services.ocr_service import _save_question_results
 
 logger = logging.getLogger(__name__)
 
@@ -104,10 +99,11 @@ def process_ocr_task(
         crop_source_path = raw_image_path if raw_image_path and os.path.exists(raw_image_path) else processed_image_path
 
         # 步骤1：整页试卷识别（用 processed 图片获取 OCR 结果用于展示/验证）
+        engine = get_ocr_engine()
         with open(ocr_image_path, "rb") as f:
             image_body = f.read()
         ocr_type = "scan" if ocr_image_path == processed_image_path else "photo"
-        ocr_result = page_recognize(body=image_body, image_type=ocr_type)
+        ocr_result = engine.page_recognize(image_data=image_body, image_type=ocr_type)
         if not ocr_result or not ocr_result.get("content"):
             _sync_update_db_status(
                 assignment_task_id,
@@ -124,7 +120,7 @@ def process_ocr_task(
                 with open(cut_image_path, "rb") as f_raw:
                     raw_body = f_raw.read()
                 raw_ocr_type = "photo"
-                raw_ocr = page_recognize(body=raw_body, image_type=raw_ocr_type)
+                raw_ocr = engine.page_recognize(image_data=raw_body, image_type=raw_ocr_type)
                 if raw_ocr and raw_ocr.get("content"):
                     raw_text = raw_ocr["content"]
                     if len(raw_text) > len(ocr_content_for_split):
@@ -132,53 +128,22 @@ def process_ocr_task(
             except Exception:
                 pass
 
-        # 步骤2：结构化切题（主方案）
+        # 步骤2：结构化切题（引擎内部处理回退逻辑）
         with open(cut_image_path, "rb") as f:
             cut_body = f.read()
 
-        cut_result = None
-        used_api = None
-
-        # 2a. 先尝试 Structed（精细版结构化切题）
         try:
-            structed_result = paper_structed(body=cut_body, subject="default", need_rotate=True, output_oricoord=True)
-            if structed_result and structed_result.get("part_info"):
-                has_subjects = any(
-                    len(p.get("subject_list", [])) > 0
-                    for p in structed_result["part_info"]
-                )
-                if has_subjects:
-                    cut_result = structed_result
-                    used_api = "RecognizeEduPaperStructed"
+            cut_result = engine.paper_cut(image_data=cut_body, subject="default")
         except Exception as e:
-            print(f"RecognizeEduPaperStructed 失败，准备回退: {e}")
-
-        # 2b. 回退方案：用旧版 paper_cut 重试
-        if cut_result is None:
-            for try_img_type in ["photo", "scan"]:
-                try:
-                    cut_result = paper_cut(body=cut_body, image_type=try_img_type, output_oricoord=True)
-                    if cut_result:
-                        page_list = cut_result.get("page_list", [])
-                        has_subjects = any(
-                            len(p.get("subject_list", [])) > 0 for p in page_list
-                        )
-                        if has_subjects:
-                            used_api = f"RecognizeEduPaperCut({try_img_type})"
-                            break
-                except Exception as e:
-                    print(f"paper_cut({try_img_type}) 失败: {e}")
-
-        if cut_result is None:
             _sync_update_db_status(
                 assignment_task_id,
                 self.request.id,
                 status=3,
-                error="所有切题方案均返回空结果",
+                error=f"所有切题方案均返回空结果: {e}",
             )
             return {"status": "failed", "task_id": assignment_task_id}
 
-        print(f"切题成功：{used_api}")
+        print(f"切题成功：{type(engine).__name__}")
 
         # 步骤3：将切题结果写入 question_results 表，同时裁剪题目图片
         os.makedirs(CUT_DIR, exist_ok=True)
