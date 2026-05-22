@@ -16,12 +16,9 @@ from abc import ABC, abstractmethod
 import requests
 
 from core import config
+from utils.baidu_token import BaiduTokenManager
 
 logger = logging.getLogger(__name__)
-
-# ---------- Token 缓存（模块级，跨请求复用） ----------
-_cached_token: str | None = None
-_token_expires_at: float = 0
 
 
 class BaseOCREngine(ABC):
@@ -149,38 +146,14 @@ class AliyunOCREngine(BaseOCREngine):
 class BaiduOCREngine(BaseOCREngine):
     """百度云 OCR 引擎，通过 HTTP API 调用 paper_cut_edu / doc_analysis 接口"""
 
-    TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
     PAPER_CUT_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/paper_cut_edu"
     DOC_ANALYSIS_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/doc_analysis"
 
     def __init__(self):
-        self._api_key = config.BAIDU_CLOUD_API_KEY
-        self._secret_key = config.BAIDU_CLOUD_SECRET_KEY
-
-    # ---------- Token 管理 ----------
-
-    def _fetch_token(self) -> tuple[str, float]:
-        """通过 AK/SK 换取 access_token，返回 (token, 过期时间戳)"""
-        params = {
-            "grant_type": "client_credentials",
-            "client_id": self._api_key,
-            "client_secret": self._secret_key,
-        }
-        resp = requests.post(self.TOKEN_URL, params=params, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        if "access_token" not in data:
-            raise RuntimeError(f"获取百度云 access_token 失败: {data}")
-        expires_at = time.time() + data.get("expires_in", 2592000)
-        logger.info("百度云 access_token 已刷新，有效期至 %s", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(expires_at)))
-        return data["access_token"], expires_at
-
-    def _ensure_token(self) -> str:
-        """确保 token 有效，过期前 1 小时自动刷新"""
-        global _cached_token, _token_expires_at
-        if _cached_token is None or time.time() > _token_expires_at - 3600:
-            _cached_token, _token_expires_at = self._fetch_token()
-        return _cached_token
+        self._token_mgr = BaiduTokenManager(
+            config.BAIDU_CLOUD_API_KEY,
+            config.BAIDU_CLOUD_SECRET_KEY,
+        )
 
     # ---------- HTTP 请求封装 ----------
 
@@ -196,7 +169,7 @@ class BaiduOCREngine(BaseOCREngine):
         last_error = None
 
         for attempt in range(max_retries):
-            token = self._ensure_token()
+            token = self._token_mgr.get_token()
             full_url = f"{url}?access_token={token}"
 
             try:
@@ -217,8 +190,7 @@ class BaiduOCREngine(BaseOCREngine):
 
             if error_code in (110, 111):  # Token 无效或过期
                 logger.warning("百度云 Token 过期，强制刷新后重试")
-                global _cached_token
-                _cached_token = None
+                self._token_mgr.invalidate()
                 continue
             elif error_code == 18:  # QPS 超限
                 wait = (2 ** attempt) + random.uniform(0, 1)

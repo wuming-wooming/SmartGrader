@@ -64,3 +64,15 @@ ALIBABA_CLOUD_ENDPOINT = os.getenv("ALIBABA_CLOUD_ENDPOINT", "ocr-api.cn-hangzho
 # ---------- 百度云 OCR 配置 ----------
 BAIDU_CLOUD_API_KEY = os.getenv("BAIDU_CLOUD_API_KEY", "")
 BAIDU_CLOUD_SECRET_KEY = os.getenv("BAIDU_CLOUD_SECRET_KEY", "")
+
+# ---------- 百度云智能作业批改配置 ----------
+BAIDU_HOMEWORK_ENABLED = os.getenv("BAIDU_HOMEWORK_ENABLED", "true") == "true"
+BAIDU_HOMEWORK_POLL_TIMEOUT = int(os.getenv("BAIDU_HOMEWORK_POLL_TIMEOUT", "180"))
+BAIDU_HOMEWORK_POLL_INTERVAL = float(os.getenv("BAIDU_HOMEWORK_POLL_INTERVAL", "2.0"))
+BAIDU_HOMEWORK_LLM_REVIEW = os.getenv("BAIDU_HOMEWORK_LLM_REVIEW", "true") == "true"
+
+# ---------- LLM 批改策略配置 ----------
+LLM_GRADING_STRATEGY = os.getenv("LLM_GRADING_STRATEGY", "text_only")  # "text_only" | "multimodal"
+
+# ---------- 图像处理管道配置 ----------
+IMAGE_PIPELINE_STEPS = os.getenv("IMAGE_PIPELINE_STEPS", "grayscale,threshold,crop,enhance")

@@ -36,12 +36,13 @@ app = FastAPI(
 )
 
 # 注册路由
-from routers import user_router, image_router, ocr_router, grading_router
+from routers import user_router, image_router, ocr_router, grading_router, baidu_homework_router
 
 app.include_router(user_router.router)
 app.include_router(grading_router.router)
 app.include_router(image_router.router)
 app.include_router(ocr_router.router)
+app.include_router(baidu_homework_router.router)
 
 # 挂载静态文件目录，让前端可以直接通过 URL 访问图片
 os.makedirs("data/raw_images", exist_ok=True)
