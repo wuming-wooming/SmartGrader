@@ -72,7 +72,7 @@ BAIDU_HOMEWORK_POLL_INTERVAL = float(os.getenv("BAIDU_HOMEWORK_POLL_INTERVAL", "
 BAIDU_HOMEWORK_LLM_REVIEW = os.getenv("BAIDU_HOMEWORK_LLM_REVIEW", "true") == "true"
 
 # ---------- LLM 批改策略配置 ----------
-LLM_GRADING_STRATEGY = os.getenv("LLM_GRADING_STRATEGY", "text_only")  # "text_only" | "multimodal"
+LLM_GRADING_STRATEGY = os.getenv("LLM_GRADING_STRATEGY", "multimodal")  # "text_only" | "multimodal"
 
 # ---------- 图像处理管道配置 ----------
 IMAGE_PIPELINE_STEPS = os.getenv("IMAGE_PIPELINE_STEPS", "grayscale,threshold,crop,enhance")
