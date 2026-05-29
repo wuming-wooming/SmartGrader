@@ -22,6 +22,66 @@ logger = logging.getLogger(__name__)
 # 裁剪图片保存目录
 CUT_DIR = "data/cut_images"
 
+# 学科关键词检测表：用于当 API 返回空 subject 时从文本内容推断学科
+_SUBJECT_DETECT_KEYWORDS = {
+    "math": [
+        "计算", "方程", "几何", "分数", "小数", "加减乘除", "乘除",
+        "体积", "面积", "周长", "边长", "半径", "直径", "÷", "×",
+        "正方形", "长方形", "三角形", "梯形", "平行", "角度", "度数",
+        "千克", "克", "吨", "千米", "米", "速度", "时间", "距离",
+        "乘法", "加法", "减法", "除法", "个位", "十位", "百位",
+        "公鸡", "母鸡",  # 小学应用题常见
+    ],
+    "chinese": [
+        "拼音", "词语", "句子", "作文", "阅读", "古诗", "文言文",
+        "汉字", "笔画", "部首", "组词", "造句", "修辞", "比喻",
+        "下列", "选词", "填空", "朗读", "课文", "作者",
+    ],
+    "english": [
+        "单词", "英语", "字母", "发音", "拼写", "语法", "时态",
+        "词汇", "句型", "翻译", "阅读理解",
+    ],
+    "history": [
+        "鸦片战争", "太平天国", "辛亥革命", "五四运动", "洋务运动",
+        "戊戌变法", "历史", "古代", "近代", "时期", "世纪",
+        "革命", "战争", "运动", "起义", "王朝", "帝国",
+        "某学者认为", "学者", "材料", "反映了", "体现了",
+        "工业革命", "资产阶级", "无产阶级", "社会主义",
+    ],
+    "physics": [
+        "质量", "密度", "体积", "重力", "速度", "加速度",
+        "力", "牛顿", "焦耳", "压强", "浮力", "功", "功率",
+        "欧姆", "电阻", "电流", "电压", "电路", "光", "声",
+        "温度", "热量", "比热容", "热值",
+    ],
+    "chemistry": [
+        "元素", "化学", "反应", "分子", "原子", "溶液", "氧气",
+        "氢气", "二氧化碳", "酸碱盐", "金属", "化合价",
+        "化学式", "方程式", "催化剂",
+    ],
+}
+
+
+def _detect_subject_from_text(text: str) -> str:
+    """
+    从文本内容推断学科，当 API 返回空 subject_label 时作为后备方案
+    通过关键词匹配（支持多个学科），返回匹配分数最高的学科名
+
+    :param text: 题目文本内容
+    :return: 学科名（如 "math", "history"），未匹配到返回 ""
+    """
+    if not text:
+        return ""
+    scores = {}
+    for subject, keywords in _SUBJECT_DETECT_KEYWORDS.items():
+        count = sum(1 for kw in keywords if kw in text)
+        if count > 0:
+            scores[subject] = count
+    if scores:
+        best = max(scores, key=scores.get)
+        return best
+    return ""
+
 
 def _crop_question_image(
     image_path: str, coordinate: dict, output_path: str
@@ -137,6 +197,14 @@ def _save_question_results(
             # 如果有多余的容器（结构不完整），清除
             while len(containers) > 1:
                 containers.pop()
+
+    # 学科检测：当 API 返回的 subject_label 为空时，从文本内容推断学科
+    for item in containers:
+        if not item["subject_label"]:
+            detected = _detect_subject_from_text(item["text"])
+            if detected:
+                logger.info("学科检测: '%s' -> %s (via text analysis)", item["text"][:30], detected)
+                item["subject_label"] = detected
 
     # 后处理：拆分合并的多道题
     expanded = []
@@ -291,15 +359,22 @@ def _validate_coordinate_bounds(coord: dict, image_path: str):
 # 1. 阿拉伯数字序号（排除单位写法如 5N, 1kg, 10³）
 _QUESTION_NUM_PATTERN = re.compile(
     r"(?<!\d)(\d+)[.、．]"
-    r"(?!\s*[Nnkgm㎡³²%/h])\s*"
-    r"[\u4e00-\u9fff]"
+    r"(?!\s*[Nnkgm㎡³²%/hH])\s*"
+    '["\u201c\u201d\u300c\u300e「『【\\(（]?'  # 允许可选的前引号/括号
+    r"[\u4e00-\u9fffA-Za-z]"  # 中文或英文字母开头
 )
 # 2. 新题起始关键词：匹配新题引入
 # "某"是中文应用题典型的题目起始词
 _NEW_QUESTION_PATTERN = re.compile(
     r"(?:^|(?<=\s)|(?<=[。；！？!?\n]))\s*"
-    r"(某[石块体积为]|有一?[块个段小]|质量为|体积为|求[该此]|质为)"
+    r"(某[石块体积为]|有一?[块个段小]|质量为|体积为|求[该此]|质为|运输|\u201c借来)"  # 补充常见历史题起始词
     r"[\u4e00-\u9fff\da-zA-Z×÷]"
+)
+# 3. 选择题选项结束 → 新题切换：检测选项D/结尾后紧跟新句子
+_ANSWER_TO_NEW_Q_PATTERN = re.compile(
+    r"[Dd][.、．]?\s*[\u4e00-\u9fffA-Za-z].*?[。；！？!?？]\s*"
+    r"(?!\s*(?:[A-Da-d][.、．]))"  # 不是下一个选项
+    r"(?=[\u4e00-\u9fff]{2,})"  # 至少2个汉字开头 → 新题
 )
 
 def _split_merged_questions(text: str, coordinate: dict | None) -> list[dict]:
@@ -321,6 +396,8 @@ def _split_merged_questions(text: str, coordinate: dict | None) -> list[dict]:
         split_positions.add(m.start())
     for m in _NEW_QUESTION_PATTERN.finditer(text):
         split_positions.add(m.start())
+    for m in _ANSWER_TO_NEW_Q_PATTERN.finditer(text):
+        split_positions.add(m.end())  # 选项结束后位置为切分点
 
     # 必须有多个切分点才执行拆分
     split_positions = sorted(split_positions)

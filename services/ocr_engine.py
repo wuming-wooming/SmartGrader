@@ -8,9 +8,9 @@ OCR 引擎适配器模块
 import base64
 import json
 import logging
+import os
 import random
 import time
-import urllib.parse
 from abc import ABC, abstractmethod
 
 import requests
@@ -154,8 +154,8 @@ class BaiduOCREngine(BaseOCREngine):
     DOC_ANALYSIS_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/doc_analysis"
 
     def __init__(self):
-        self._api_key = config.BAIDU_CLOUD_API_KEY
-        self._secret_key = config.BAIDU_CLOUD_SECRET_KEY
+        self._api_key = os.getenv('BAIDU_CLOUD_API_KEY', '')
+        self._secret_key = os.getenv('BAIDU_CLOUD_SECRET_KEY', '')
 
     # ---------- Token 管理 ----------
 
@@ -186,9 +186,8 @@ class BaiduOCREngine(BaseOCREngine):
 
     @staticmethod
     def _encode_image(image_data: bytes) -> str:
-        """图片二进制 → Base64 → urlencode"""
-        b64 = base64.b64encode(image_data).decode("utf-8")
-        return urllib.parse.quote_plus(b64)
+        """图片二进制 → Base64（requests.post 会自动做 urlencode）"""
+        return base64.b64encode(image_data).decode("utf-8")
 
     def _call_with_retry(self, url: str, data: dict, max_retries: int = 3) -> dict:
         """带指数退避重试的请求包装，处理 QPS 超限和 Token 过期"""
@@ -288,24 +287,40 @@ class BaiduOCREngine(BaseOCREngine):
         subject_list = []
 
         for qus in qus_results:
-            # 拼接题目文本（stem_text + subqus_text + option_text + answer_text）
-            elem_text = qus.get("elem_text", {})
-            text_parts = []
-            for key in ("stem_text", "subqus_text", "option_text", "answer_text"):
-                part = elem_text.get(key, "")
-                if part:
-                    text_parts.append(part)
-            full_text = " ".join(text_parts)
+            # 拼接题目文本
+            full_text = ""
+            qus_elements = qus.get("qus_element", [])
+            if qus_elements and isinstance(qus_elements, list):
+                text_parts = []
+                for elem in qus_elements:
+                    elem_words = elem.get("elem_word", [])
+                    if elem_words and isinstance(elem_words, list):
+                        for ew in elem_words:
+                            w = ew.get("word", "")
+                            if w:
+                                text_parts.append(w)
+                if text_parts:
+                    full_text = " ".join(text_parts)
+            else:
+                # 兼容旧版 elem_text 格式
+                elem_text = qus.get("elem_text", {})
+                text_parts = []
+                for key in ("stem_text", "subqus_text", "option_text", "answer_text"):
+                    part = elem_text.get(key, "")
+                    if part:
+                        text_parts.append(part)
+                full_text = " ".join(text_parts)
 
-            # 提取坐标（qus_location: 四角点 → pos_list 格式）
-            qus_location = qus.get("qus_location", [])
+            # 提取坐标（qus_location: {points: [{x,y},...]} → pos_list 格式）
+            qus_location = qus.get("qus_location", {})
             pos_list = []
-            if qus_location and len(qus_location) >= 4:
+            points = qus_location.get("points", []) if isinstance(qus_location, dict) else qus_location
+            if len(points) >= 4:
                 pos_list = [[
-                    {"x": qus_location[0].get("x", 0), "y": qus_location[0].get("y", 0)},
-                    {"x": qus_location[1].get("x", 0), "y": qus_location[1].get("y", 0)},
-                    {"x": qus_location[2].get("x", 0), "y": qus_location[2].get("y", 0)},
-                    {"x": qus_location[3].get("x", 0), "y": qus_location[3].get("y", 0)},
+                    {"x": points[0].get("x", 0), "y": points[0].get("y", 0)},
+                    {"x": points[1].get("x", 0), "y": points[1].get("y", 0)},
+                    {"x": points[2].get("x", 0), "y": points[2].get("y", 0)},
+                    {"x": points[3].get("x", 0), "y": points[3].get("y", 0)},
                 ]]
 
             subject_list.append({
@@ -333,7 +348,7 @@ def get_ocr_engine() -> BaseOCREngine:
     """根据配置返回 OCR 引擎单例"""
     global _engine_instance
     if _engine_instance is None:
-        engine_name = config.OCR_ENGINE.lower()
+        engine_name = os.getenv('OCR_ENGINE', 'aliyun').lower()
         if engine_name == "aliyun":
             _engine_instance = AliyunOCREngine()
         elif engine_name == "baidu":
