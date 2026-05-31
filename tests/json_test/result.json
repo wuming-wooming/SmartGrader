@@ -1,0 +1,331 @@
+{
+    "error_msg": "",
+    "isAllFinished": true,
+    "stat_result": {
+        "all": 10,
+        "correcting": 0,
+        "corrected": 10
+    },
+    "error_code": 0,
+    "task_id": "2056730864131664323",
+    "imageResults": [
+        {
+            "result": [
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec01",
+                    "question": "",
+                    "seqence": 1,
+                    "questionArea": [
+                        {
+                            "right_y": 590,
+                            "left_x": 946,
+                            "right_x": 1601,
+                            "left_y": 412
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 590,
+                                "left_x": 946,
+                                "right_x": 1601,
+                                "left_y": 412
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_0_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec01/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec01/3d644d2d-c225-48bd-8114-79769dfce578.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F89f274d29811440110b8575b90001968ac4a6e9485713c455e2a64fdee740145"
+                },
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec02",
+                    "question": "",
+                    "seqence": 2,
+                    "questionArea": [
+                        {
+                            "right_y": 642,
+                            "left_x": 2086,
+                            "right_x": 2624,
+                            "left_y": 521
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 642,
+                                "left_x": 2086,
+                                "right_x": 2624,
+                                "left_y": 521
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_1_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec02/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec02/22a91221-fb2a-433b-a11a-a24824146eda.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2Fb38c31a2754d58af17a4100d39fa7b86b29fe9c703eb3a6a4cbb7e46607656a1"
+                },
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec03",
+                    "question": "",
+                    "seqence": 3,
+                    "questionArea": [
+                        {
+                            "right_y": 716,
+                            "left_x": 957,
+                            "right_x": 1684,
+                            "left_y": 537
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 716,
+                                "left_x": 957,
+                                "right_x": 1684,
+                                "left_y": 537
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_2_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec03/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec03/e54ca594-8bde-4c49-bff2-f8042e773c9a.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F904bea6be7105a636f8d832541d373e85c81343051b20f6f09b32528e21fa996"
+                },
+                {
+                    "correctResult": 2,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec04",
+                    "question": "",
+                    "seqence": 4,
+                    "questionArea": [
+                        {
+                            "right_y": 743,
+                            "left_x": 2083,
+                            "right_x": 2648,
+                            "left_y": 635
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 2,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 743,
+                                "left_x": 2083,
+                                "right_x": 2648,
+                                "left_y": 635
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_3_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec04/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec04/1084374b-2f40-4b48-8ad3-b7f3015f3ff5.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F7754f8227f28b107441fe2247402b4a6ff7c092ce036f02847b689c63097a01f"
+                },
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec05",
+                    "question": "",
+                    "seqence": 5,
+                    "questionArea": [
+                        {
+                            "right_y": 820,
+                            "left_x": 968,
+                            "right_x": 1602,
+                            "left_y": 651
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 820,
+                                "left_x": 968,
+                                "right_x": 1602,
+                                "left_y": 651
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_4_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec05/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec05/fa8cd639-1219-4bb5-9930-15e842dbc8e2.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F0e381ac35dbfdd54a163a0a29a130ea56772a2787d17771a27501a86bb7d89ec"
+                },
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec06",
+                    "question": "",
+                    "seqence": 6,
+                    "questionArea": [
+                        {
+                            "right_y": 863,
+                            "left_x": 2121,
+                            "right_x": 2706,
+                            "left_y": 748
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 863,
+                                "left_x": 2121,
+                                "right_x": 2706,
+                                "left_y": 748
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_5_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec06/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec06/3cb54e47-bc8b-4809-b449-293b39ec1e78.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2Fa04956b814e37f528e26cf197d36475642c8baa6f23d48cfe4ef4fa88cb4a439"
+                },
+                {
+                    "correctResult": 2,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec07",
+                    "question": "",
+                    "seqence": 7,
+                    "questionArea": [
+                        {
+                            "right_y": 1679,
+                            "left_x": 765,
+                            "right_x": 1711,
+                            "left_y": 1021
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 2,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 1679,
+                                "left_x": 765,
+                                "right_x": 1711,
+                                "left_y": 1021
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_6_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec07/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec07/539a23fa-0b46-42fa-89cc-3ccc253899ce.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F832f00931dfd70baa86669e80dab1956d6d993aa2d7d790b6665e22563951ecd"
+                },
+                {
+                    "correctResult": 2,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec08",
+                    "question": "",
+                    "seqence": 8,
+                    "questionArea": [
+                        {
+                            "right_y": 1683,
+                            "left_x": 2047,
+                            "right_x": 3001,
+                            "left_y": 1094
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 2,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 1683,
+                                "left_x": 2047,
+                                "right_x": 3001,
+                                "left_y": 1094
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_7_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec08/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec08/e8d4ba84-ecd6-4b13-9ca4-f532ca2d7f6c.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F4581575701a820b88c4dc5f755d50d5461af70b0037e65f112c0e9e563a1beb6"
+                },
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec09",
+                    "question": "",
+                    "seqence": 9,
+                    "questionArea": [
+                        {
+                            "right_y": 2514,
+                            "left_x": 883,
+                            "right_x": 1898,
+                            "left_y": 1794
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 2514,
+                                "left_x": 883,
+                                "right_x": 1898,
+                                "left_y": 1794
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_8_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec09/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec09/32b2e3a6-47d4-4de8-b0b9-582a0fdbbedc.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2F21fcdc5df078c46009fa71b4b64a21ca6ee8dae6888567abf9974259e9dcc235"
+                },
+                {
+                    "correctResult": 1,
+                    "questionId": "69352195d5c624ac0baf3c30bcccf8ec010",
+                    "question": "",
+                    "seqence": 10,
+                    "questionArea": [
+                        {
+                            "right_y": 2505,
+                            "left_x": 2166,
+                            "right_x": 2931,
+                            "left_y": 1806
+                        }
+                    ],
+                    "isFinish": true,
+                    "slot": [
+                        {
+                            "correctResult": 1,
+                            "reason": "",
+                            "handwritingArea": {
+                                "right_y": 2505,
+                                "left_x": 2166,
+                                "right_x": 2931,
+                                "left_y": 1806
+                            },
+                            "seqence": 1,
+                            "slotId": "69352195d5c624ac0baf3c30bcccf8ec_9_0"
+                        }
+                    ],
+                    "type": 1,
+                    "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/69352195d5c624ac0baf3c30bcccf8ec010/2056730864131664323/69352195d5c624ac0baf3c30bcccf8ec010/059b888b-d207-4221-9dc6-9b5acfe91b93.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A37%3A11Z%2F86400%2Fhost%2Fa0224e68a6206af8cb3f86523df63df3e52b09a2031b27df600f4afe790c7ad1"
+                }
+            ],
+            "imageId": "69352195d5c624ac0baf3c30bcccf8ec",
+            "imageUrl": "http://bj.bcebos.com/v1/ai-engine-biz/image/ocr/correct_edu/image-2056730864131664323?authorization=bce-auth-v1%2FALTAKBcePRu1163Jb7eksX7osh%2F2026-05-19T13%3A37%3A05Z%2F172800%2F%2F9d289125d070c975d242fcff6216a6d2658bec6ec3c7704ceda5ecd03b47d1d6",
+            "paperSubject": ""
+        }
+    ],
+    "log_id": "2056731534492345968"
+}

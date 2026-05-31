@@ -82,7 +82,7 @@ class TextOnlyGradingStrategy(GradingStrategy):
     """纯文本批改策略"""
 
     async def grade(self, question_data: dict) -> dict:
-        subject = question_data.get("subject", "math")
+        subject = question_data.get("subject", "default")
         question_text = question_data.get("question_text", "")
         full_score = float(question_data.get("full_score", 10.0))
 
@@ -119,7 +119,7 @@ class MultimodalGradingStrategy(GradingStrategy):
     """
 
     async def grade(self, question_data: dict) -> dict:
-        subject = question_data.get("subject", "math")
+        subject = question_data.get("subject", "default")
         question_text = question_data.get("question_text", "")
         full_score = float(question_data.get("full_score", 10.0))
         image_path = question_data.get("question_image", "")

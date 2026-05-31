@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 SUBMIT_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/correct_edu/create_task"
 POLL_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/correct_edu/get_result"
-
+CUT_DIR = "data/cut_images"
 
 class BaiduHomeworkGradingAPI:
     """百度云智能作业批改 API 适配器"""
@@ -103,9 +103,11 @@ class BaiduHomeworkGradingAPI:
                 error_msg = result.get("error_msg", str(result))
                 raise RuntimeError(f"百度作业批改查询失败 (error_code={error_code}): {error_msg}")
 
-            # 检查是否完成（ret_code=0 或 data 中包含结果）
-            ret_code = result.get("data", {}).get("ret_code") or result.get("result", {}).get("ret_code")
-            if ret_code == 0 or self._has_result(result):
+            # 检查是否完成
+            is_all_finished = result.get("data", {}).get("isAllFinished") or result.get("result", {}).get("isAllFinished")
+            # ret_code = result.get("data", {}).get("ret_code") or result.get("result", {}).get("ret_code")
+            # if ret_code == 0 or self._has_result(result):
+            if is_all_finished:
                 logger.info("百度作业批改任务完成: %s", baidu_task_id)
                 return result
 
@@ -141,43 +143,49 @@ class BaiduHomeworkGradingAPI:
           - baidu_comment: 百度批注/解析
           - full_score: 满分
         """
-        data = raw_result.get("data", {}) or raw_result.get("result", {})
+        data = raw_result.get("data", {}) or raw_result.get("result", {}) or raw_result
         questions_raw = (
-            data.get("qus_result")
+            data.get("imageResults")[0].get("result")
+            or data.get("qus_result")
             or data.get("question_list")
             or data.get("questions")
             or []
         )
+
+        subject = data.get("imageResults")[0].get("paperSubject")
+        if subject == "":
+            subject = "default"
 
         if not questions_raw:
             return []
 
         parsed = []
         for i, q in enumerate(questions_raw):
-            item = self._parse_single_question(q, i + 1, original_image_path)
+            item = self._parse_single_question(q, i + 1, original_image_path, subject)
             parsed.append(item)
 
         return parsed
 
     def _parse_single_question(self, q: dict, index: int,
-                               image_path: str | None) -> dict:
+                               image_path: str | None, subject: str) -> dict:
         """解析单道题目"""
         # --- 文本 ---
-        elem_text = q.get("elem_text", {})
-        text_parts = []
-        for key in ("stem_text", "subqus_text", "option_text", "answer_text", "question_text"):
-            part = elem_text.get(key, "") or q.get(key, "")
-            if part:
-                text_parts.append(str(part))
-        if not text_parts:
-            text_parts.append(q.get("question_text", "") or q.get("text", ""))
-        text = " ".join(text_parts)
+        # elem_text = q.get("elem_text", {})
+        # text_parts = []
+        # for key in ("stem_text", "subqus_text", "option_text", "answer_text", "question_text"):
+        #     part = elem_text.get(key, "") or q.get(key, "")
+        #     if part:
+        #         text_parts.append(str(part))
+        # if not text_parts:
+        #     text_parts.append(q.get("question_text", "") or q.get("text", ""))
+        # text = " ".join(text_parts)
+        text = q.get("question", "")
 
         # --- 坐标 ---
         coordinate = self._extract_coordinate(q)
 
         # --- 学科 ---
-        subject = q.get("subject", "") or q.get("category", "") or elem_text.get("subject", "") or "default"
+        # subject = q.get("subject", "") or q.get("category", "") or elem_text.get("subject", "") or "default"
 
         # --- 页码 ---
         page_num = q.get("page_num", 1) or q.get("page_id", 1) or 1
@@ -190,8 +198,16 @@ class BaiduHomeworkGradingAPI:
         # --- 百度批改结果 ---
         grading = q.get("grading_result", {}) or q.get("correct_result", {}) or q
         baidu_score = grading.get("score", 0) or grading.get("grade_score", 0) or 0
-        baidu_is_correct = grading.get("is_correct", 0) or grading.get("correct", 0) or 0
-        baidu_comment = grading.get("comment", "") or grading.get("analysis", "") or grading.get("error_reason", "") or ""
+        # baidu_is_correct = grading.get("is_correct", 0) or grading.get("correct", 0) or 0
+        baidu_is_correct = q.get("correctResult", 2) == 1
+        # baidu_comment = grading.get("comment", "") or grading.get("analysis", "") or grading.get("error_reason", "") or ""
+        slot = q.get("slot", [])
+        comment = []
+        for i, slot in enumerate(slot):
+            if not slot:
+                continue
+            comment.append(str(i + 1) + ". " + slot.get("reason", ""))
+        baidu_comment = "\n".join(comment)
         full_score = q.get("full_score", 0) or q.get("total_score", 0) or grading.get("full_score", 0) or 0
 
         return {
@@ -200,7 +216,7 @@ class BaiduHomeworkGradingAPI:
             "subject_label": subject,
             "page_num": page_num,
             "baidu_score": float(baidu_score) if baidu_score else 0.0,
-            "baidu_is_correct": int(baidu_is_correct) if baidu_is_correct else 0,
+            "baidu_is_correct": int(baidu_is_correct),
             "baidu_comment": str(baidu_comment),
             "full_score": float(full_score) if full_score else 0.0,
         }
@@ -208,6 +224,17 @@ class BaiduHomeworkGradingAPI:
     @staticmethod
     def _extract_coordinate(q: dict) -> dict | None:
         """从题目中提取坐标"""
+
+        # 尝试 questionArea
+        loc = q.get("questionArea", [])[0]
+        if loc:
+            return {
+                "x1": loc.get("left_x", 0),
+                "y1": loc.get("left_y", 0),
+                "x2": loc.get("right_x", 0),
+                "y2": loc.get("right_y", 0)
+            }
+
         # 尝试 qus_location（四角点）
         loc = q.get("qus_location", [])
         if loc and len(loc) >= 4:
