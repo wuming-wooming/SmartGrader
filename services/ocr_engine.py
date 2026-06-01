@@ -11,11 +11,13 @@ import logging
 import os
 import random
 import time
+import urllib.parse
 from abc import ABC, abstractmethod
 
 import requests
 
 from core import config
+from utils.baidu_token import BaiduTokenManager
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +158,10 @@ class BaiduOCREngine(BaseOCREngine):
     def __init__(self):
         self._api_key = os.getenv('BAIDU_CLOUD_API_KEY', '')
         self._secret_key = os.getenv('BAIDU_CLOUD_SECRET_KEY', '')
-
+        self._token_mgr = BaiduTokenManager(
+            config.BAIDU_CLOUD_API_KEY,
+            config.BAIDU_CLOUD_SECRET_KEY,
+        )
     # ---------- Token 管理 ----------
 
     def _fetch_token(self) -> tuple[str, float]:
@@ -186,8 +191,9 @@ class BaiduOCREngine(BaseOCREngine):
 
     @staticmethod
     def _encode_image(image_data: bytes) -> str:
-        """图片二进制 → Base64（requests.post 会自动做 urlencode）"""
-        return base64.b64encode(image_data).decode("utf-8")
+        """图片二进制 → Base64 → urlencode"""
+        b64 = base64.b64encode(image_data).decode("utf-8")
+        return urllib.parse.quote_plus(b64)
 
     def _call_with_retry(self, url: str, data: dict, max_retries: int = 3) -> dict:
         """带指数退避重试的请求包装，处理 QPS 超限和 Token 过期"""
@@ -195,7 +201,7 @@ class BaiduOCREngine(BaseOCREngine):
         last_error = None
 
         for attempt in range(max_retries):
-            token = self._ensure_token()
+            token = self._token_mgr.get_token()
             full_url = f"{url}?access_token={token}"
 
             try:
@@ -216,8 +222,7 @@ class BaiduOCREngine(BaseOCREngine):
 
             if error_code in (110, 111):  # Token 无效或过期
                 logger.warning("百度云 Token 过期，强制刷新后重试")
-                global _cached_token
-                _cached_token = None
+                self._token_mgr.invalidate()
                 continue
             elif error_code == 18:  # QPS 超限
                 wait = (2 ** attempt) + random.uniform(0, 1)
@@ -348,7 +353,7 @@ def get_ocr_engine() -> BaseOCREngine:
     """根据配置返回 OCR 引擎单例"""
     global _engine_instance
     if _engine_instance is None:
-        engine_name = os.getenv('OCR_ENGINE', 'aliyun').lower()
+        engine_name = config.OCR_ENGINE.lower()
         if engine_name == "aliyun":
             _engine_instance = AliyunOCREngine()
         elif engine_name == "baidu":

@@ -1,0 +1,289 @@
+{
+  "error_code": 0,
+  "error_msg": "",
+  "result": {
+    "task_id": "2056732762435370599",
+    "isAllFinished": true,
+    "status": "Success",
+    "stat_result": {
+      "all": 7,
+      "correcting": 0,
+      "corrected": 7
+    },
+    "imageResults": [
+      {
+        "imageId": "24b25f3e0217ed05722c63c20b0e4aaf",
+        "imageUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf/0600ee26-c99a-4fef-973b-0fe0ffd29ddd.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2F52a28983bd0ba1dcb3cfc0a61313366ca744bd657a96209b80b138c3b5c528f3",
+        "paperSubject": "math",
+        "result": [
+          {
+            "correctResult": 1,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf01",
+            "question": "",
+            "seqence": 0,
+            "questionArea": [
+              {
+                "right_y": 1755,
+                "left_x": 510,
+                "right_x": 1017,
+                "left_y": 291
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 1,
+                "reason": "作答内容的猜想结果与验证步骤均正确，符合题目给出的等式规律",
+                "handwritingArea": {
+                  "right_y": 1509,
+                  "left_x": 516,
+                  "right_x": 951,
+                  "left_y": 1401
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_0_0"
+              },
+              {
+                "correctResult": 1,
+                "reason": "作答内容的规律表达式与验证步骤均正确，符合题目给出的模式",
+                "handwritingArea": {
+                  "right_y": 1740,
+                  "left_x": 513,
+                  "right_x": 831,
+                  "left_y": 1518
+                },
+                "seqence": 2,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_0_1"
+              }
+            ],
+            "type": 19,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf01/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf01/12ca715f-1434-41dc-a457-bef3965d2f21.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2F28fb4cf6035f89f0bc469af2fa1541388720081490dae9bc01f56205a2952fa6"
+          },
+          {
+            "correctResult": 1,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf02",
+            "question": "",
+            "seqence": 1,
+            "questionArea": [
+              {
+                "right_y": 570,
+                "left_x": 9,
+                "right_x": 512,
+                "left_y": 339
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 1,
+                "reason": "首先分析最简二次根式：√5满足最简定义；√(1/3)被开方数含分母，不是最简；√(0.5a)被开方数是小数（可化为含分母的形式），不是最简；-2√(a²b)被开方数含能开得尽方的因式a²，不是最简；√(x²+y²)满足最简定义。综上最简二次根式共2个，正确选项为A，用户作答A与正确选项一致",
+                "handwritingArea": {
+                  "right_y": 525,
+                  "left_x": 432,
+                  "right_x": 477,
+                  "left_y": 471
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_1_0"
+              }
+            ],
+            "type": 2,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf02/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf02/cdfce94e-352a-45f1-8812-57f02911b8bf.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2Fdac02449241eaaf13a3d0255b8a10ba91611506f63e0be08fa2bbb5bef42494f"
+          },
+          {
+            "correctResult": 2,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf03",
+            "question": "",
+            "seqence": 2,
+            "questionArea": [
+              {
+                "right_y": 801,
+                "left_x": 9,
+                "right_x": 512,
+                "left_y": 573
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 2,
+                "reason": "要使等式成立，需满足被开方数非负且分母不为0，即2-x≥0且x+1>0，解得-1<x≤2，正确选项为D；用户选择C，与正确答案不一致",
+                "handwritingArea": {
+                  "right_y": 702,
+                  "left_x": 441,
+                  "right_x": 483,
+                  "left_y": 654
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_2_0"
+              }
+            ],
+            "type": 2,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf03/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf03/d9276869-469f-48bd-bfb6-667b8e93a707.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2F3a0bfee9a59b42f1f898aead0765e48b73063fe52df875569f53e4578c7b1f42"
+          },
+          {
+            "correctResult": 1,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf04",
+            "question": "",
+            "seqence": 3,
+            "questionArea": [
+              {
+                "right_y": 900,
+                "left_x": 15,
+                "right_x": 510,
+                "left_y": 801
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 1,
+                "reason": "本题长方形长=面积÷宽，计算得√30÷√5=√6，用户作答为√6，与正确结果一致",
+                "handwritingArea": {
+                  "right_y": 888,
+                  "left_x": 105,
+                  "right_x": 159,
+                  "left_y": 846
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_3_0"
+              }
+            ],
+            "type": 4,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf04/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf04/0213b250-b91f-4c24-9520-1ee78d7bd242.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2Ffe797cb569e19d0f5a69fb074c8e37514bd220cd9a5d6ca3844566b73e75021c"
+          },
+          {
+            "correctResult": 2,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf05",
+            "question": "",
+            "seqence": 4,
+            "questionArea": [
+              {
+                "right_y": 990,
+                "left_x": 15,
+                "right_x": 396,
+                "left_y": 900
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 2,
+                "reason": "经计算原式√(1.8×10⁴)/√(2×10³)=√9=3，用户填写6，与正确结果不符，计算错误",
+                "handwritingArea": {
+                  "right_y": 957,
+                  "left_x": 285,
+                  "right_x": 324,
+                  "left_y": 909
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_4_0"
+              }
+            ],
+            "type": 17,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf05/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf05/d38586fb-e669-4140-93f5-ff55af12a386.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2Fbad531ca51c218e0b32c3a721dcf7a1b5ceaf02379f3965fd6a350b0251ed34b"
+          },
+          {
+            "correctResult": 1,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf06",
+            "question": "",
+            "seqence": 5,
+            "questionArea": [
+              {
+                "right_y": 1092,
+                "left_x": 15,
+                "right_x": 504,
+                "left_y": 993
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 1,
+                "reason": "二次根式有意义要求2x+7≥0，解得x≥-3.5，结合最简二次根式要求，x最小整数为-2，用户作答与正确结果一致",
+                "handwritingArea": {
+                  "right_y": 1080,
+                  "left_x": 294,
+                  "right_x": 354,
+                  "left_y": 1044
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_5_0"
+              }
+            ],
+            "type": 4,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf06/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf06/d29d1193-891f-4b6d-9f29-53cc61828f11.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2F34faea390f8d7b88b40ae42b3f425f7d774f817cf6cbd288d8936747f55c6cde"
+          },
+          {
+            "correctResult": 1,
+            "questionId": "24b25f3e0217ed05722c63c20b0e4aaf07",
+            "question": "",
+            "seqence": 6,
+            "questionArea": [
+              {
+                "right_y": 1716,
+                "left_x": 15,
+                "right_x": 510,
+                "left_y": 1095
+              }
+            ],
+            "isFinish": true,
+            "slot": [
+              {
+                "correctResult": 1,
+                "reason": "计算√(16×25/81)，16×25=400，√400=20，√81=9，结果为20/9，用户作答正确",
+                "handwritingArea": {
+                  "right_y": 1551,
+                  "left_x": 24,
+                  "right_x": 144,
+                  "left_y": 1395
+                },
+                "seqence": 1,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_6_0"
+              },
+              {
+                "correctResult": 1,
+                "reason": "已知p>q>0，化简√(p²/(p-q))，有理化后结果为p√(p-q)/(p-q)，用户作答正确",
+                "handwritingArea": {
+                  "right_y": 1596,
+                  "left_x": 171,
+                  "right_x": 393,
+                  "left_y": 1389
+                },
+                "seqence": 2,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_6_1"
+              },
+              {
+                "correctResult": 1,
+                "reason": "计算√45÷(3/2√(1/5))×(3/2√5)，分步运算后结果为15√5，用户作答正确",
+                "handwritingArea": {
+                  "right_y": 1680,
+                  "left_x": 24,
+                  "right_x": 213,
+                  "left_y": 1569
+                },
+                "seqence": 3,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_6_2"
+              },
+              {
+                "correctResult": 1,
+                "reason": "计算3√(2⅓)×(-1/8√15)÷(1/2√(2/5))，分步化简后结果为-15√14/8，用户作答正确",
+                "handwritingArea": {
+                  "right_y": 1698,
+                  "left_x": 318,
+                  "right_x": 501,
+                  "left_y": 1563
+                },
+                "seqence": 4,
+                "slotId": "24b25f3e0217ed05722c63c20b0e4aaf_6_3"
+              }
+            ],
+            "type": 17,
+            "cropUrl": "http://tv-mis.bj.bcebos.com//correct_evaluate_data/24b25f3e0217ed05722c63c20b0e4aaf07/2056732762435370599/24b25f3e0217ed05722c63c20b0e4aaf07/c1d56c7c-4171-414b-8c73-e874e7634761.png?authorization=bce-auth-v1%2FALTAK5AGAcpDzr9LsTXvf4PbuU%2F2026-05-19T13%3A44%3A44Z%2F86400%2Fhost%2Fcfca8f1845b446b135912d6167ec528d861f1b03ff5da9d96e292ce9ce9fe26f"
+          }
+        ]
+      }
+    ]
+  },
+  "log_id": 2060280850368993284
+}

@@ -18,7 +18,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 # ---------- 数据库配置 ----------
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "mysql+aiomysql://root:1234@localhost:3306/smart_grader?charset=utf8mb4"
+    ""
 )
 DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "20"))
 DATABASE_MAX_OVERFLOW = int(os.getenv("DATABASE_MAX_OVERFLOW", "30"))
@@ -28,7 +28,7 @@ DATABASE_POOL_RECYCLE = int(os.getenv("DATABASE_POOL_RECYCLE", "3600"))
 # ---------- Celery 配置 ----------
 SYNC_DATABASE_URL = os.getenv(
     "SYNC_DATABASE_URL",
-    "mysql+pymysql://root:1234@localhost:3306/smart_grader?charset=utf8mb4"
+    ""
 )
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
@@ -52,8 +52,27 @@ OSS_BUCKET_NAME = os.getenv("OSS_BUCKET_NAME", "")
 OSS_ACCESS_KEY_ID = os.getenv("OSS_ACCESS_KEY_ID", "")
 OSS_ACCESS_KEY_SECRET = os.getenv("OSS_ACCESS_KEY_SECRET", "")
 
+# ---------- OCR 引擎选择 ----------
+# "aliyun" 或 "baidu"
+OCR_ENGINE = os.getenv("OCR_ENGINE", "baidu")
+
 # ---------- 阿里云 OCR 配置 ----------
-# 从 .env 文件中读取，已通过 load_dotenv() 加载
 ALIBABA_CLOUD_ACCESS_KEY_ID = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID", "")
 ALIBABA_CLOUD_ACCESS_KEY_SECRET = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", "")
 ALIBABA_CLOUD_ENDPOINT = os.getenv("ALIBABA_CLOUD_ENDPOINT", "ocr-api.cn-hangzhou.aliyuncs.com")
+
+# ---------- 百度云 OCR 配置 ----------
+BAIDU_CLOUD_API_KEY = os.getenv("BAIDU_CLOUD_API_KEY", "")
+BAIDU_CLOUD_SECRET_KEY = os.getenv("BAIDU_CLOUD_SECRET_KEY", "")
+
+# ---------- 百度云智能作业批改配置 ----------
+BAIDU_HOMEWORK_ENABLED = os.getenv("BAIDU_HOMEWORK_ENABLED", "true") == "true"
+BAIDU_HOMEWORK_POLL_TIMEOUT = int(os.getenv("BAIDU_HOMEWORK_POLL_TIMEOUT", "180"))
+BAIDU_HOMEWORK_POLL_INTERVAL = float(os.getenv("BAIDU_HOMEWORK_POLL_INTERVAL", "2.0"))
+BAIDU_HOMEWORK_LLM_REVIEW = os.getenv("BAIDU_HOMEWORK_LLM_REVIEW", "true") == "true"
+
+# ---------- LLM 批改策略配置 ----------
+LLM_GRADING_STRATEGY = os.getenv("LLM_GRADING_STRATEGY", "multimodal")  # "text_only" | "multimodal"
+
+# ---------- 图像处理管道配置 ----------
+IMAGE_PIPELINE_STEPS = os.getenv("IMAGE_PIPELINE_STEPS", "grayscale,threshold,crop,enhance")

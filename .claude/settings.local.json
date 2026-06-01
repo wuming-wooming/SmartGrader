@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d D:\\\\PyCharm\\\\Projects\\\\SmartGrader)",
+      "Bash(python -c \"from utils.baidu_token import BaiduTokenManager; print\\('OK: baidu_token'\\)\")",
+      "Bash(python -c \"from services.image_pipeline import ImagePipeline, GrayscaleStep, ThresholdStep, DenoiseStep, CropStep, EnhanceStep; print\\('OK: image_pipeline'\\)\")"
+    ]
+  }
+}
