@@ -18,6 +18,12 @@ class ImageProcessResponse(BaseModel):
     task_status: int
 
 
+class ProcessedImageResponse(BaseModel):
+    """获取处理好的图片响应"""
+    task_id: int
+    processed_image_url: str
+
+
 # ===========================================================================
 # 切题图片展示
 # ===========================================================================
