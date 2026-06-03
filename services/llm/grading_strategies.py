@@ -19,6 +19,7 @@ from core import config
 from services.llm.llm_provider import LLMProvider
 from services.llm.prompt_templates import (
     MULTIMODAL_USER_PROMPT,
+    BAIDU_REVIEW_USER_PROMPT,
     _safe_format,
     get_grading_prompt,
 )
@@ -63,6 +64,18 @@ def _encode_image_as_data_url(image_path: str) -> str | None:
         logger.warning("图片编码失败: %s", image_path, exc_info=True)
         return None
 
+def _make_image_data(image_path: str, user_prompt: str) -> list[dict]:
+    human_content: list[dict] = [
+        {"type": "text", "text": user_prompt},
+    ]
+    if image_path and os.path.exists(image_path):
+        image_url = _encode_image_as_data_url(image_path)
+        if image_url:
+            human_content.append({
+                "type": "image_url",
+                "image_url": {"url": image_url},
+            })
+    return human_content
 
 # ======================== 策略基类 ========================
 
@@ -133,16 +146,7 @@ class MultimodalGradingStrategy(GradingStrategy):
         )
 
         # 构建多模态 HumanMessage
-        human_content: list[dict] = [
-            {"type": "text", "text": user_prompt},
-        ]
-        if image_path and os.path.exists(image_path):
-            image_url = _encode_image_as_data_url(image_path)
-            if image_url:
-                human_content.append({
-                    "type": "image_url",
-                    "image_url": {"url": image_url},
-                })
+        human_content = _make_image_data(image_path, user_prompt)
 
         model = LLMProvider.get_model(temperature=0.1)
         messages = [
@@ -154,6 +158,43 @@ class MultimodalGradingStrategy(GradingStrategy):
 
         logger.info(
             "多模态批阅完成 subject=%s score=%s/%s",
+            subject, raw.get("score", 0), full_score,
+        )
+        return _normalize_grading_result(raw, full_score)
+
+# ======================== 百度智能批阅接口LLM复核策略 ========================
+class BaiduLLMGradingStrategy(GradingStrategy):
+    """百度智能批阅接口LLM复核策略"""
+    async def grade(self, question_data: dict) -> dict:
+        subject = question_data.get("subject", "default")
+        # question_text = question_data.get("question_text", "")
+        full_score = float(question_data.get("full_score", 10.0))
+        is_correct = question_data.get("is_correct", 0) == 1
+        comment = question_data.get("comment", "")
+        image_path = question_data.get("question_image", "")
+
+        system_prompt, _ = get_grading_prompt(subject)
+        user_prompt = _safe_format(
+            BAIDU_REVIEW_USER_PROMPT,
+            subject=subject,
+            full_score=full_score,
+            is_correct=is_correct,
+            comment=comment,
+        )
+
+        # 构建多模态 HumanMessage
+        human_content = _make_image_data(image_path, user_prompt)
+
+        model = LLMProvider.get_model(temperature=0.1)
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=human_content),
+        ]
+        response = await model.ainvoke(messages)
+        raw = _parse_json_response(response.content)
+
+        logger.info(
+            "LLM复核批阅完成 subject=%s score=%s/%s",
             subject, raw.get("score", 0), full_score,
         )
         return _normalize_grading_result(raw, full_score)
@@ -178,6 +219,9 @@ class GradingStrategyFactory:
             if strategy_name == "multimodal":
                 return MultimodalGradingStrategy()
             return TextOnlyGradingStrategy()
+
+        if config.BAIDU_HOMEWORK_LLM_REVIEW:
+            return BaiduLLMGradingStrategy()
 
         if config.LLM_GRADING_STRATEGY == "multimodal":
             return MultimodalGradingStrategy()
