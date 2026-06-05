@@ -4,6 +4,7 @@
       <div class="logo">智能作业批改系统</div>
       <div class="user-info">
         <span class="welcome">欢迎，{{ user?.username }}</span>
+        <el-button link type="primary" @click="historyVisible = true">历史记录</el-button>
         <el-button link type="danger" @click="handleLogout">退出登录</el-button>
       </div>
     </el-header>
@@ -46,6 +47,7 @@
         </div>
       </el-card>
     </el-main>
+    <HistoryDrawer v-model="historyVisible" @view-result="handleViewHistoryResult" />
   </div>
 </template>
 
@@ -56,6 +58,7 @@ import ImageCleanView from './ImageClean.vue'
 import ProcessingView from './Processing.vue'
 import OcrConfirmView from './OcrConfirm.vue'
 import ResultView from './Result.vue'
+import HistoryDrawer from './HistoryDrawer.vue'
 
 const props = defineProps<{
   user: any
@@ -69,6 +72,7 @@ const workspaceStep = ref<'upload' | 'ocr_processing' | 'ocr_confirm' | 'grading
 const ocrTaskId = ref<number | null>(null)
 const gradingTaskId = ref<number | null>(null)
 const rawImageUrl = ref<string>('')
+const historyVisible = ref(false)
 
 const currentStepIndex = computed(() => {
   switch (workspaceStep.value) {
@@ -110,6 +114,11 @@ const resetWorkspace = () => {
   ocrTaskId.value = null
   gradingTaskId.value = null
   rawImageUrl.value = ''
+}
+
+const handleViewHistoryResult = (taskId: number) => {
+  gradingTaskId.value = taskId
+  workspaceStep.value = 'result'
 }
 </script>
 

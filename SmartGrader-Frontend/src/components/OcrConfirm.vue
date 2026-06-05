@@ -122,7 +122,8 @@ const processedImageUrl = computed(() => {
   if (!props.rawImageUrl) return ''
   const parts = props.rawImageUrl.split('/')
   const filename = parts.pop() || ''
-  return props.rawImageUrl.replace('raw_images', 'processed_images').replace(filename, `cleaned_${filename}`)
+  const nameWithoutExt = filename.includes('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename
+  return props.rawImageUrl.replace('raw_images', 'processed_images').replace(filename, `cleaned_${nameWithoutExt}.png`)
 })
 
 const fetchOcrResult = async () => {
@@ -147,7 +148,20 @@ const fetchOcrResult = async () => {
       return
     }
     if (error.response && error.response.status === 404) {
-      // 如果 404 说明 OCR 还在后台处理中，继续轮询
+      // 检查任务状态，看是否因为报错而导致没有数据
+      try {
+        const statusRes: any = await api.get(`/grading/status/${props.taskId}`)
+        if (statusRes.task_status === 3) {
+          status.value = 'exception'
+          statusText.value = statusRes.error_msg || 'OCR 识别与切题失败'
+          ElMessage.error(statusRes.error_msg || 'OCR 识别与切题失败')
+          return
+        }
+      } catch (statusError) {
+        // 忽略状态检查的错误，继续走重试逻辑
+      }
+      
+      // 如果 404 且任务没失败，说明 OCR 还在后台处理中，继续轮询
       progress.value = Math.min(progress.value + 15, 95)
       pollTimer = setTimeout(() => {
         fetchOcrResult()
@@ -240,7 +254,7 @@ onUnmounted(() => {
   gap: 20px;
 }
 .image-card {
-  height: 450px;
+  height: 600px;
   display: flex;
   flex-direction: column;
 }
@@ -270,7 +284,7 @@ onUnmounted(() => {
 }
 .preview-img {
   width: 100%;
-  max-height: 350px;
+  max-height: 500px;
   background-color: #f5f7fa;
   border-radius: 4px;
 }

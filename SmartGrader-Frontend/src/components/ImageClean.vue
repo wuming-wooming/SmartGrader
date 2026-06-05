@@ -70,7 +70,7 @@
       
       <div class="action-bar">
         <el-button type="primary" size="large" @click="handleSubmit">
-          提交切题
+          开始切题
         </el-button>
       </div>
     </div>
@@ -119,29 +119,44 @@ const pollStatus = async () => {
   if (!props.taskId) return
   
   try {
+    // 优先尝试获取处理后的图片，如果获取到了，说明清洗已经完成
+    try {
+      const processedRes: any = await api.get(`/images/${props.taskId}/processed`)
+      let url = processedRes.processed_image_url
+      if (url) {
+        progress.value = 100
+        status.value = 'success'
+        statusText.value = '清洗完成！'
+        clearInterval(timer)
+        
+        rawImageUrl.value = props.rawImageUrl
+        
+        const parts = url.split('/')
+        const filename = parts.pop() || ''
+        if (filename.includes('.')) {
+            const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'))
+            url = url.replace(filename, `${nameWithoutExt}.png`)
+        }
+        processedImageUrl.value = url
+        
+        setTimeout(() => {
+          cleaningDone.value = true
+        }, 500)
+        return
+      }
+    } catch (e: any) {
+      // 400 意味着 processed_file 还没准备好，继续走下面的状态轮询
+      if (e.response && e.response.status !== 400 && e.response.status !== 404) {
+        throw e
+      }
+    }
+
     const res: any = await api.get(`/grading/status/${props.taskId}`)
     const taskStatus = res.task_status
     
     if (taskStatus === 0 || taskStatus === 1) {
       progress.value = Math.min(progress.value + 15, 95)
       statusText.value = '正在进行图片清洗...'
-    } else if (taskStatus === 2) {
-      progress.value = 100
-      status.value = 'success'
-      statusText.value = '清洗完成！'
-      clearInterval(timer)
-      
-      rawImageUrl.value = props.rawImageUrl
-      try {
-        const processedRes: any = await api.get(`/images/${props.taskId}/processed`)
-        processedImageUrl.value = processedRes.processed_image_url
-      } catch (error) {
-        console.error('获取处理后图片失败', error)
-      }
-      
-      setTimeout(() => {
-        cleaningDone.value = true
-      }, 500)
     } else if (taskStatus === 3) {
       status.value = 'exception'
       statusText.value = res.error_msg || '图片清洗失败'
