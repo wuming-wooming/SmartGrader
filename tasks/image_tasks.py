@@ -34,12 +34,11 @@ def _update_db_status(
     with SyncSessionLocal() as db:
         assignment_task = db.get(AssignmentTask, assignment_task_id)
         if assignment_task:
-            # assignment_task.task_status = status
+            assignment_task.task_status = status
             if processed_file:
                 assignment_task.processed_file = processed_file
             if error:
                 assignment_task.error_msg = error
-                assignment_task.task_status = status
 
         stmt = select(AsyncTask).where(AsyncTask.celery_task_id == celery_task_id)
         result = db.execute(stmt)

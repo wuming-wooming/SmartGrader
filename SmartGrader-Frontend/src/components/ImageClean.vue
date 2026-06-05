@@ -134,7 +134,8 @@ const pollStatus = async () => {
       rawImageUrl.value = props.rawImageUrl
       try {
         const processedRes: any = await api.get(`/images/${props.taskId}/processed`)
-        processedImageUrl.value = processedRes.processed_image_url
+        // 将后端返回的 url 后缀强制替换为 .png，以适配后端的强制 png 保存逻辑
+        processedImageUrl.value = processedRes.processed_image_url.replace(/\.[^/.]+$/, ".png")
       } catch (error) {
         console.error('获取处理后图片失败', error)
       }

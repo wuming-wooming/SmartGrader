@@ -122,7 +122,9 @@ const processedImageUrl = computed(() => {
   if (!props.rawImageUrl) return ''
   const parts = props.rawImageUrl.split('/')
   const filename = parts.pop() || ''
-  return props.rawImageUrl.replace('raw_images', 'processed_images').replace(filename, `cleaned_${filename}`)
+  const newPath = props.rawImageUrl.replace('raw_images', 'processed_images').replace(filename, `cleaned_${filename}`)
+  // 强制替换后缀为 .png，以适配后端的图片清洗保存逻辑
+  return newPath.replace(/\.[^/.]+$/, ".png")
 })
 
 const fetchOcrResult = async () => {
