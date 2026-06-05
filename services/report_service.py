@@ -7,7 +7,7 @@ import logging
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from models.assignment_task import AssignmentTask
 from models.question_result import QuestionResult
@@ -23,9 +23,9 @@ class ReportService:
     """批阅报告生成服务"""
 
     async def generate_and_save_report(
-        self, session: AsyncSession, assignment_task_id: int
+        self, session: Session, assignment_task_id: int
     ) -> Report:
-        task = await session.get(AssignmentTask, assignment_task_id)
+        task = session.get(AssignmentTask, assignment_task_id)
         if not task:
             raise ValueError(f"AssignmentTask {assignment_task_id} 不存在")
 
@@ -34,8 +34,8 @@ class ReportService:
             .where(QuestionResult.task_id == assignment_task_id)
             .order_by(QuestionResult.page_num, QuestionResult.question_index)
         )
-        result = await session.execute(stmt)
-        question_results: list[QuestionResult] = result.scalars().all()
+        result = session.execute(stmt)
+        question_results: list[QuestionResult] = list(result.scalars().all())
 
         total_questions = len(question_results)
         correct_count = sum(1 for q in question_results if q.is_correct == 1)
@@ -86,7 +86,7 @@ class ReportService:
             suggestion=suggestion.suggestion,
         )
         session.add(report)
-        await session.commit()
+        session.commit()
 
         logger.info("报告生成完成 task_id=%d total=%.1f/%.1f", assignment_task_id, total_score, max_total_score)
         return report

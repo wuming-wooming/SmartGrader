@@ -8,34 +8,25 @@ Celery 异步批改任务模块
 """
 import asyncio
 import logging
-import sys
-import traceback
 from datetime import datetime
 
-# Windows 上强制使用 SelectorEventLoop（ProactorEventLoop 与 aiomysql 不兼容）
-if sys.platform == 'win32':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-# 注意：Celery solo 模式串行执行，每个 asyncio.run() 创建独立事件循环。
-# 引擎不能缓存（绑定到创建时的事件循环），因此 _get_session_local() 每次新建引擎。
-
-from celery import chord, group
+from celery import chord
 from celery.exceptions import MaxRetriesExceededError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from core.celery_app import celery_app
 from core.config import (
-    DATABASE_MAX_OVERFLOW,
-    DATABASE_POOL_RECYCLE,
-    DATABASE_POOL_SIZE,
-    DATABASE_POOL_TIMEOUT,
-    DATABASE_URL,
     TASK_MAX_RETRIES,
     TASK_RETRY_BACKOFF,
-    TASK_RETRY_BACKOFF_MAX,
-)
-from repositories.question_result_repository import QuestionResultRepository
+    TASK_RETRY_BACKOFF_MAX, )
+from repositories.question_result_repository import QuestionResultRepositorySync
 from services.grading_service import GradingService
+
+# Windows 上强制使用 SelectorEventLoop（ProactorEventLoop 与 aiomysql 不兼容）
+# if sys.platform == 'win32':
+#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+# 注意：Celery solo 模式串行执行，每个 asyncio.run() 创建独立事件循环。
+# 引擎不能缓存（绑定到创建时的事件循环），因此 _get_session_local() 每次新建引擎。
 
 logger = logging.getLogger(__name__)
 
@@ -44,37 +35,41 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 
-def _get_session_local() -> async_sessionmaker:
+def _get_session_local() -> sessionmaker:
     """每次调用新建引擎（asyncio.run() 每次创建新事件循环，引擎不能跨循环复用）"""
-    engine = create_async_engine(
-        DATABASE_URL,
-        pool_size=DATABASE_POOL_SIZE,
-        max_overflow=DATABASE_MAX_OVERFLOW,
-        pool_timeout=DATABASE_POOL_TIMEOUT,
-        pool_recycle=DATABASE_POOL_RECYCLE,
-        pool_pre_ping=True,
-    )
-    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    # engine = create_async_engine(
+    #     # DATABASE_URL,
+    #     SYNC_DATABASE_URL,
+    #     pool_size=DATABASE_POOL_SIZE,
+    #     max_overflow=DATABASE_MAX_OVERFLOW,
+    #     pool_timeout=DATABASE_POOL_TIMEOUT,
+    #     pool_recycle=DATABASE_POOL_RECYCLE,
+    #     pool_pre_ping=True,
+    # )
+    # return async_sessionmaker(engine, class_=Session, expire_on_commit=False)
+
+    from core.database import SyncSessionLocal
+    return SyncSessionLocal
 
 
-async def _update_task_status(
+def _update_task_status(
     task_id: int, status: int, error_msg: str | None = None, finished_at: datetime | None = None
 ) -> None:
     from models.assignment_task import AssignmentTask
 
     SessionLocal = _get_session_local()
-    async with SessionLocal() as session:
-        task = await session.get(AssignmentTask, task_id)
+    with SessionLocal() as session:
+        task = session.get(AssignmentTask, task_id)
         if task:
             task.task_status = status
             if error_msg:
                 task.error_msg = error_msg
             if finished_at:
                 task.finished_at = finished_at
-            await session.commit()
+            session.commit()
 
 
-async def _update_async_status(
+def _update_async_status(
     assignment_task_id: int, status: int, error_detail: str | None = None
 ) -> None:
     from sqlalchemy import select
@@ -82,17 +77,17 @@ async def _update_async_status(
     from models.async_task import AsyncTask
 
     SessionLocal = _get_session_local()
-    async with SessionLocal() as session:
+    with SessionLocal() as session:
         stmt = select(AsyncTask).where(
             AsyncTask.assignment_task_id == assignment_task_id
         )
-        result = await session.execute(stmt)
+        result = session.execute(stmt)
         at = result.scalars().first()
         if at:
             at.status = status
             if error_detail:
                 at.error_detail = error_detail
-            await session.commit()
+            session.commit()
 
 
 # ===========================================================================
@@ -115,10 +110,8 @@ def submit_for_grading(self, assignment_task_id: int, ocr_data: list[dict]):
     celery_task_id = self.request.id
 
     try:
-        async def _init_status():
-            await _update_task_status(assignment_task_id, 1)
-            await _update_async_status(assignment_task_id, 1)
-        asyncio.run(_init_status())
+        _update_task_status(assignment_task_id, 1)
+        _update_async_status(assignment_task_id, 1)
     except Exception as e:
         logger.exception("更新任务状态失败 task_id=%d", assignment_task_id)
         raise
@@ -175,9 +168,9 @@ async def _grade_and_persist(assignment_task_id: int, question_data: dict) -> di
     grading_result = await grading_service.grade_question(question_data)
 
     SessionLocal = _get_session_local()
-    async with SessionLocal() as session:
-        repo = QuestionResultRepository(session)
-        await repo.create(
+    with SessionLocal() as session:
+        repo = QuestionResultRepositorySync(session)
+        repo.create(
             task_id=assignment_task_id,
             page_num=question_data["page_num"],
             question_index=question_data["question_index"],
@@ -192,7 +185,7 @@ async def _grade_and_persist(assignment_task_id: int, question_data: dict) -> di
             comment=grading_result.get("comment"),
             coordinate=question_data.get("coordinate"),
         )
-        await session.commit()
+        session.commit()
 
     return grading_result
 
@@ -231,17 +224,17 @@ async def _do_generate_report(assignment_task_id: int):
     from services.report_service import ReportService
 
     SessionLocal = _get_session_local()
-    async with SessionLocal() as session:
+    with SessionLocal() as session:
         service = ReportService()
         await service.generate_and_save_report(session, assignment_task_id)
 
-        task = await session.get(AssignmentTask, assignment_task_id)
+        task = session.get(AssignmentTask, assignment_task_id)
         if task:
             task.task_status = 2
             task.finished_at = datetime.utcnow()
-            await session.commit()
+            session.commit()
 
-    await _update_async_status(assignment_task_id, 2)
+    _update_async_status(assignment_task_id, 2)
 
 
 # ===========================================================================
@@ -250,8 +243,8 @@ async def _do_generate_report(assignment_task_id: int):
 def _handle_final_failure(assignment_task_id: int, error_msg: str) -> None:
     """所有重试耗尽后的兜底处理"""
     try:
-        asyncio.run(_update_task_status(assignment_task_id, 3, error_msg))
-        asyncio.run(_update_async_status(assignment_task_id, 3, error_msg))
+        _update_task_status(assignment_task_id, 3, error_msg)
+        _update_async_status(assignment_task_id, 3, error_msg)
     except Exception:
         logger.exception("兜底失败处理异常 task_id=%d", assignment_task_id)
 

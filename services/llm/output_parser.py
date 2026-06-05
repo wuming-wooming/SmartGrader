@@ -39,6 +39,9 @@ def _extract_json(text: str) -> dict:
     text = re.sub(r",\s*}", "}", text)
     text = re.sub(r",\s*]", "]", text)
 
+    # 处理LaTeX格式中的'\'，防止JSON解析失败
+    text = re.sub(r"\\", "\\\\", text)
+
     try:
         return json.loads(text)
     except json.JSONDecodeError:
