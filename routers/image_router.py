@@ -15,7 +15,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import get_current_user
 from core.database import get_db
-from schemas.image_schemas import ImageProcessResponse
+from models.question_result import QuestionResult
+from schemas.image_schemas import (
+    ImageProcessResponse,
+    CutImageItem,
+    CutImageListResponse,
+    ProcessedImageResponse,
+)
 from services.assignment_service import create_assignment_task
 from tasks.image_tasks import process_homework_image_task
 
@@ -67,9 +73,7 @@ async def upload_and_clean_image(
         with open(raw_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"保存原始图片到本地失败: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"保存原始图片到本地失败: {str(e)}")
 
     # 存入数据库：创建初始任务 (此时清洗还没开始，不填写 processed_file)
     try:
@@ -97,4 +101,93 @@ async def upload_and_clean_image(
         message="图片已成功上传，后台正在排队清洗中...",
         raw_image_url=raw_url,
         task_status=0,
+    )
+
+
+@router.get(
+    "/{task_id}/cuts",
+    response_model=CutImageListResponse,
+    summary="获取切题后的图片列表",
+)
+async def get_cut_images(
+    task_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    根据任务ID返回切题后的每道题图片及元数据，便于前端逐题展示。
+
+    返回字段包括：
+    - question_id: 题目数据库主键
+    - question_index: 题目在页内序号
+    - page_num: 页码
+    - subject: 学科标签
+    - question_text: OCR 识别文本
+    - image_url: 裁剪图片的可访问 URL（已通过 /data 静态挂载）
+    - coordinate: 题目在原图上的坐标包围盒
+    """
+    from sqlalchemy import select
+
+    stmt = (
+        select(QuestionResult)
+        .where(QuestionResult.task_id == task_id)
+        .order_by(QuestionResult.page_num, QuestionResult.question_index)
+    )
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail=f"任务 {task_id} 尚无切题数据，请确认 OCR 已完成",
+        )
+
+    cuts = [
+        CutImageItem(
+            question_id=q.id,
+            question_index=q.question_index,
+            page_num=q.page_num,
+            subject=q.subject,
+            question_text=q.question_text,
+            image_url=q.question_image,
+            coordinate=q.coordinate,
+        )
+        for q in rows
+    ]
+
+    return CutImageListResponse(
+        task_id=task_id,
+        total=len(cuts),
+        cuts=cuts,
+    )
+
+
+@router.get(
+    "/{task_id}/processed",
+    response_model=ProcessedImageResponse,
+    summary="获取处理好的图片",
+)
+async def get_processed_image(
+    task_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    获取图片处理（清洗）完成后的图片 URL。
+    """
+    from repositories.assignment_task_repository import AssignmentTaskRepository
+
+    task_repo = AssignmentTaskRepository(db)
+    task = await task_repo.get_by_id(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    if task.user_id != current_user["id"]:
+        raise HTTPException(status_code=403, detail="无权访问该任务")
+
+    if not task.processed_file:
+        raise HTTPException(status_code=400, detail="图片处理尚未完成，请稍后查询")
+
+    return ProcessedImageResponse(
+        task_id=task_id, processed_image_url=task.processed_file
     )

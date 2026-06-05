@@ -8,6 +8,7 @@ OCR 引擎适配器模块
 import base64
 import json
 import logging
+import os
 import random
 import time
 import urllib.parse
@@ -19,6 +20,10 @@ from core import config
 from utils.baidu_token import BaiduTokenManager
 
 logger = logging.getLogger(__name__)
+
+# ---------- Token 缓存（模块级，跨请求复用） ----------
+_cached_token: str | None = None
+_token_expires_at: float = 0
 
 
 class BaseOCREngine(ABC):
@@ -146,14 +151,41 @@ class AliyunOCREngine(BaseOCREngine):
 class BaiduOCREngine(BaseOCREngine):
     """百度云 OCR 引擎，通过 HTTP API 调用 paper_cut_edu / doc_analysis 接口"""
 
+    TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
     PAPER_CUT_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/paper_cut_edu"
     DOC_ANALYSIS_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/doc_analysis"
 
     def __init__(self):
+        self._api_key = os.getenv('BAIDU_CLOUD_API_KEY', '')
+        self._secret_key = os.getenv('BAIDU_CLOUD_SECRET_KEY', '')
         self._token_mgr = BaiduTokenManager(
             config.BAIDU_CLOUD_API_KEY,
             config.BAIDU_CLOUD_SECRET_KEY,
         )
+    # ---------- Token 管理 ----------
+
+    def _fetch_token(self) -> tuple[str, float]:
+        """通过 AK/SK 换取 access_token，返回 (token, 过期时间戳)"""
+        params = {
+            "grant_type": "client_credentials",
+            "client_id": self._api_key,
+            "client_secret": self._secret_key,
+        }
+        resp = requests.post(self.TOKEN_URL, params=params, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        if "access_token" not in data:
+            raise RuntimeError(f"获取百度云 access_token 失败: {data}")
+        expires_at = time.time() + data.get("expires_in", 2592000)
+        logger.info("百度云 access_token 已刷新，有效期至 %s", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(expires_at)))
+        return data["access_token"], expires_at
+
+    def _ensure_token(self) -> str:
+        """确保 token 有效，过期前 1 小时自动刷新"""
+        global _cached_token, _token_expires_at
+        if _cached_token is None or time.time() > _token_expires_at - 3600:
+            _cached_token, _token_expires_at = self._fetch_token()
+        return _cached_token
 
     # ---------- HTTP 请求封装 ----------
 
@@ -262,24 +294,40 @@ class BaiduOCREngine(BaseOCREngine):
         subject_list = []
 
         for qus in qus_results:
-            # 拼接题目文本（stem_text + subqus_text + option_text + answer_text）
-            elem_text = qus.get("elem_text", {})
-            text_parts = []
-            for key in ("stem_text", "subqus_text", "option_text", "answer_text"):
-                part = elem_text.get(key, "")
-                if part:
-                    text_parts.append(part)
-            full_text = " ".join(text_parts)
+            # 拼接题目文本
+            full_text = ""
+            qus_elements = qus.get("qus_element", [])
+            if qus_elements and isinstance(qus_elements, list):
+                text_parts = []
+                for elem in qus_elements:
+                    elem_words = elem.get("elem_word", [])
+                    if elem_words and isinstance(elem_words, list):
+                        for ew in elem_words:
+                            w = ew.get("word", "")
+                            if w:
+                                text_parts.append(w)
+                if text_parts:
+                    full_text = " ".join(text_parts)
+            else:
+                # 兼容旧版 elem_text 格式
+                elem_text = qus.get("elem_text", {})
+                text_parts = []
+                for key in ("stem_text", "subqus_text", "option_text", "answer_text"):
+                    part = elem_text.get(key, "")
+                    if part:
+                        text_parts.append(part)
+                full_text = " ".join(text_parts)
 
-            # 提取坐标（qus_location: 四角点 → pos_list 格式）
-            qus_location = qus.get("qus_location", [])
+            # 提取坐标（qus_location: {points: [{x,y},...]} → pos_list 格式）
+            qus_location = qus.get("qus_location", {})
             pos_list = []
-            if qus_location and len(qus_location) >= 4:
+            points = qus_location.get("points", []) if isinstance(qus_location, dict) else qus_location
+            if len(points) >= 4:
                 pos_list = [[
-                    {"x": qus_location[0].get("x", 0), "y": qus_location[0].get("y", 0)},
-                    {"x": qus_location[1].get("x", 0), "y": qus_location[1].get("y", 0)},
-                    {"x": qus_location[2].get("x", 0), "y": qus_location[2].get("y", 0)},
-                    {"x": qus_location[3].get("x", 0), "y": qus_location[3].get("y", 0)},
+                    {"x": points[0].get("x", 0), "y": points[0].get("y", 0)},
+                    {"x": points[1].get("x", 0), "y": points[1].get("y", 0)},
+                    {"x": points[2].get("x", 0), "y": points[2].get("y", 0)},
+                    {"x": points[3].get("x", 0), "y": points[3].get("y", 0)},
                 ]]
 
             subject_list.append({

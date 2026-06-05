@@ -8,8 +8,16 @@ Celery 异步批改任务模块
 """
 import asyncio
 import logging
+import sys
 import traceback
 from datetime import datetime
+
+# Windows 上强制使用 SelectorEventLoop（ProactorEventLoop 与 aiomysql 不兼容）
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+# 注意：Celery solo 模式串行执行，每个 asyncio.run() 创建独立事件循环。
+# 引擎不能缓存（绑定到创建时的事件循环），因此 _get_session_local() 每次新建引擎。
 
 from celery import chord, group
 from celery.exceptions import MaxRetriesExceededError
@@ -26,31 +34,27 @@ from core.config import (
     TASK_RETRY_BACKOFF,
     TASK_RETRY_BACKOFF_MAX,
 )
+from repositories.question_result_repository import QuestionResultRepository
+from services.grading_service import GradingService
 
 logger = logging.getLogger(__name__)
 
 # ===========================================================================
-# Celery Worker 独立数据库引擎（每个 Worker 进程一个，懒加载）
+# Celery Worker 数据库引擎（每次调用新建，避免不同事件循环冲突）
 # ===========================================================================
-_engine = None
-_SessionLocal: async_sessionmaker | None = None
 
 
 def _get_session_local() -> async_sessionmaker:
-    global _engine, _SessionLocal
-    if _engine is None:
-        _engine = create_async_engine(
-            DATABASE_URL,
-            pool_size=DATABASE_POOL_SIZE,
-            max_overflow=DATABASE_MAX_OVERFLOW,
-            pool_timeout=DATABASE_POOL_TIMEOUT,
-            pool_recycle=DATABASE_POOL_RECYCLE,
-            pool_pre_ping=True,
-        )
-        _SessionLocal = async_sessionmaker(
-            _engine, class_=AsyncSession, expire_on_commit=False
-        )
-    return _SessionLocal
+    """每次调用新建引擎（asyncio.run() 每次创建新事件循环，引擎不能跨循环复用）"""
+    engine = create_async_engine(
+        DATABASE_URL,
+        pool_size=DATABASE_POOL_SIZE,
+        max_overflow=DATABASE_MAX_OVERFLOW,
+        pool_timeout=DATABASE_POOL_TIMEOUT,
+        pool_recycle=DATABASE_POOL_RECYCLE,
+        pool_pre_ping=True,
+    )
+    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def _update_task_status(
@@ -111,8 +115,10 @@ def submit_for_grading(self, assignment_task_id: int, ocr_data: list[dict]):
     celery_task_id = self.request.id
 
     try:
-        asyncio.run(_update_task_status(assignment_task_id, 1))
-        asyncio.run(_update_async_status(assignment_task_id, 1))
+        async def _init_status():
+            await _update_task_status(assignment_task_id, 1)
+            await _update_async_status(assignment_task_id, 1)
+        asyncio.run(_init_status())
     except Exception as e:
         logger.exception("更新任务状态失败 task_id=%d", assignment_task_id)
         raise
@@ -165,9 +171,6 @@ def grade_single_question(self, assignment_task_id: int, question_data: dict) ->
 
 
 async def _grade_and_persist(assignment_task_id: int, question_data: dict) -> dict:
-    from repositories.question_result_repository import QuestionResultRepository
-    from services.grading_service import GradingService
-
     grading_service = GradingService()
     grading_result = await grading_service.grade_question(question_data)
 
@@ -254,7 +257,7 @@ def _handle_final_failure(assignment_task_id: int, error_msg: str) -> None:
 
 
 # 绑定 submit_for_grading 的最终失败回调
-def _on_submit_failure(self, exc, task_id, args, kwargs, einfo):
+def _on_submit_failure(exc, task_id, args, kwargs, einfo):
     aid = args[0] if args else kwargs.get("assignment_task_id", 0)
     _handle_final_failure(aid, f"{type(exc).__name__}: {exc}")
 

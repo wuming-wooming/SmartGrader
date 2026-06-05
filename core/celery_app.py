@@ -34,3 +34,4 @@ celery_app.conf.update(
     result_expires=86400,
     worker_concurrency=4
 )
+

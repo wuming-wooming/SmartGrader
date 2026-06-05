@@ -27,7 +27,7 @@ if not TOKEN:
 
 print(f'TOKEN: {TOKEN[:20]}...')
 
-img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'res', 'ima', '1 (1).jpg')
+img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'res', 'ima', '1 (2).jpg')
 
 print(f'图片: {img_path} ({os.path.getsize(img_path)} bytes)')
 
