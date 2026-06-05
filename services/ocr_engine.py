@@ -190,10 +190,12 @@ class BaiduOCREngine(BaseOCREngine):
     # ---------- HTTP 请求封装 ----------
 
     @staticmethod
-    def _encode_image(image_data: bytes) -> str:
+    def _encode_image(image_data: bytes, urlencoded: bool = False) -> str:
         """图片二进制 → Base64 → urlencode"""
         b64 = base64.b64encode(image_data).decode("utf-8")
-        return urllib.parse.quote_plus(b64)
+        if urlencoded:
+            b64 = urllib.parse.quote_plus(b64)
+        return b64
 
     def _call_with_retry(self, url: str, data: dict, max_retries: int = 3) -> dict:
         """带指数退避重试的请求包装，处理 QPS 超限和 Token 过期"""

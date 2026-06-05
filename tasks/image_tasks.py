@@ -91,11 +91,11 @@ def process_homework_image_task(
                 processed_file=processed_url,
             )
             # 图片清洗完成后，自动触发OCR识别与切题
-            process_ocr_task.delay(
-                assignment_task_id=assignment_task_id,
-                processed_image_path=output_path,
-                raw_image_path=input_path,
-            )
+            # process_ocr_task.delay(
+            #     assignment_task_id=assignment_task_id,
+            #     processed_image_path=output_path,
+            #     raw_image_path=input_path,
+            # )
             return {"status": "success", "task_id": assignment_task_id}
         else:
             _update_db_status(

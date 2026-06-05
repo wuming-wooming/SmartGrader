@@ -148,8 +148,7 @@ def _save_question_results(
                 # 从 pos_list 取坐标（第一组多边形 = 题目边界框）
                 coordinate = _extract_coordinate(subj.get("pos_list", []))
                 text = subj.get("text", "")
-                containers.append({
-                    "page_num": cut_result.get("page_id", 1),
+                containers.append({                    "page_num": cut_result.get("page_id", 1) or 1,
                     "text": text,
                     "coordinate": coordinate,
                     "subject_label": part_title,
@@ -157,7 +156,7 @@ def _save_question_results(
     elif cut_result.get("page_list"):
         # RecognizeEduPaperCut 格式（旧版备选）
         for page in cut_result["page_list"]:
-            page_num = page.get("doc_index", 1)
+            page_num = int(page.get("doc_index", 1)) or 1  # 百度云可能返回 0
             for subj in page.get("subject_list", []):
                 coordinate = None
                 content_list = subj.get("content_list_info", [])
@@ -245,7 +244,7 @@ def _save_question_results(
             cut_filename = f"cut_task{task_id}_q{new_question.id}.jpg"
             cut_path = os.path.join(CUT_DIR, cut_filename)
             if _crop_question_image(crop_source_path, item["coordinate"], cut_path):
-                new_question.question_image = cut_path
+                new_question.question_image = cut_path.replace("\\", "/")
 
         saved_count += 1
 

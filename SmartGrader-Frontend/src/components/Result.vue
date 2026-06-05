@@ -6,13 +6,13 @@
           <el-col :span="8">
             <el-card shadow="hover" class="score-card">
               <div class="score-title">总得分</div>
-              <div class="score-value">{{ result.total_score || 0 }}</div>
+              <div class="score-value">{{ result.report?.total_score || 0 }}</div>
             </el-card>
           </el-col>
           <el-col :span="16">
             <el-card shadow="hover" class="comment-card">
               <div class="comment-title">综合评价</div>
-              <div class="comment-content">{{ result.summary_comment || '暂无评价' }}</div>
+              <div class="comment-content">{{ result.report?.summary || '暂无评价' }}</div>
             </el-card>
           </el-col>
         </el-row>
@@ -23,7 +23,7 @@
       <div class="details-section">
         <el-collapse v-model="activeNames">
           <el-collapse-item 
-            v-for="(item, index) in result.details" 
+            v-for="(item, index) in result.questions" 
             :key="index" 
             :name="index"
           >
@@ -37,15 +37,15 @@
               </div>
             </template>
             <div class="item-content">
-              <div class="image-box" v-if="item.image_url">
+              <div class="image-box" v-if="item.question_image">
                 <el-image 
-                  :src="getImageUrl(item.image_url)" 
-                  :preview-src-list="[getImageUrl(item.image_url)]"
+                  :src="getImageUrl(item.question_image)" 
+                  :preview-src-list="[getImageUrl(item.question_image)]"
                   fit="contain"
                 />
               </div>
               <div class="text-box">
-                <p><strong>识别文本：</strong> {{ item.recognized_text }}</p>
+                <p><strong>识别文本：</strong> {{ item.question_text }}</p>
                 <p><strong>正确答案：</strong> {{ item.correct_answer }}</p>
                 <p><strong>批注：</strong> {{ item.comment }}</p>
               </div>
