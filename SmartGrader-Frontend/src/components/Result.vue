@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api, { baseURL } from '../utils/api'
 
@@ -88,10 +88,22 @@ const getImageUrl = (url: string) => {
 
 const fetchResult = async () => {
   if (!props.taskId) return
+  loading.value = true
   try {
     const res: any = await api.get(`/grading/result/${props.taskId}`)
-    // Structure depends on backend, assume res.data or res contains total_score, summary_comment, details
-    result.value = res.data || res
+    const data = res.data || res
+    
+    result.value = {
+      total_score: data.report?.total_score || 0,
+      summary_comment: data.report?.summary || '暂无评价',
+      details: (data.questions || []).map((q: any) => ({
+        is_correct: q.is_correct,
+        score: q.score,
+        recognized_text: q.question_text,
+        correct_answer: q.correct_answer,
+        comment: q.comment
+      }))
+    }
   } catch (error) {
     ElMessage.error('获取结果失败')
     console.error(error)
@@ -101,6 +113,10 @@ const fetchResult = async () => {
 }
 
 onMounted(() => {
+  fetchResult()
+})
+
+watch(() => props.taskId, () => {
   fetchResult()
 })
 </script>
