@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from celery import group, chord
 
 from core.celery_app import celery_app
-from core.config import BAIDU_HOMEWORK_ENABLED, BAIDU_HOMEWORK_LLM_REVIEW
+from core.config import BAIDU_HOMEWORK_ENABLED, BAIDU_HOMEWORK_LLM_REVIEW, BAIDU_HOMEWORK_AUTO_REVIEW
 from core.database import SyncSessionLocal
 from models.assignment_task import AssignmentTask
 from models.async_task import AsyncTask
@@ -105,9 +105,9 @@ def _async_download_crop_task(self, question_id: int, crop_url: str,
 def _after_all_crops_downloaded(results, assignment_task_id: int, only_split: bool):
     """所有切图下载完成后的回调，触发LLM复核"""
     logger.info("所有切图下载完成，共 %d 个任务，开始触发LLM复核", len(results))
-    if not only_split and BAIDU_HOMEWORK_LLM_REVIEW:
+    if not only_split and BAIDU_HOMEWORK_LLM_REVIEW and BAIDU_HOMEWORK_AUTO_REVIEW:
         import asyncio
-        _trigger_llm_review(assignment_task_id)
+        trigger_llm_review.delay(assignment_task_id)
     else:
         logger.info("only_split为True或LLM复核未启用，跳过复核")
 
@@ -174,8 +174,8 @@ def _backfill_baidu_grading(db, assignment_task_id: int, questions: list[dict]):
     db.commit()
     logger.info("百度批改结果已回填 task_id=%d count=%d", assignment_task_id, min(len(rows), len(questions)))
 
-
-def _trigger_llm_review(assignment_task_id: int):
+@celery_app.task(bind=True, name="baidu_homework_grading_task")
+def trigger_llm_review(assignment_task_id: int):
     """触发 LLM 复核批阅（复用现有 Chord 管线）"""
     from repositories.question_result_repository import QuestionResultRepository
     # 使用独立的 async session 读取题目数据
@@ -238,8 +238,8 @@ def baidu_homework_grading_task(self, assignment_task_id: int, image_path: str,
             image_data = f.read()
 
         api = BaiduHomeworkGradingAPI()
-        # baidu_task_id = api.submit_task(image_data, only_split=only_split)
-        baidu_task_id = "2061734371172862512"  # 测试用
+        baidu_task_id = api.submit_task(image_data, only_split=only_split)
+        # baidu_task_id = "2061734371172862512"  # 测试用
         raw_result = api.poll_result(baidu_task_id)
         questions = api.parse_grading_result(raw_result, original_image_path=image_path)
 
@@ -269,8 +269,8 @@ def baidu_homework_grading_task(self, assignment_task_id: int, image_path: str,
             logger.info("已发起异步下载切图任务，共 %d 张", len(download_items))
         else:
             # 没有切图需要下载，直接决定是否触发复核
-            if not only_split and BAIDU_HOMEWORK_LLM_REVIEW:
-                _trigger_llm_review(assignment_task_id)
+            if not only_split and BAIDU_HOMEWORK_LLM_REVIEW and BAIDU_HOMEWORK_AUTO_REVIEW:
+                trigger_llm_review.delay(assignment_task_id)
 
         return {"status": "success", "task_id": assignment_task_id, "questions_saved": saved_count}
 

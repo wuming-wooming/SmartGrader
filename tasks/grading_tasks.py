@@ -112,6 +112,7 @@ def submit_for_grading(self, assignment_task_id: int, ocr_data: list[dict]):
     try:
         _update_task_status(assignment_task_id, 1)
         _update_async_status(assignment_task_id, 1)
+        _clear_old_question_results(assignment_task_id)
     except Exception as e:
         logger.exception("更新任务状态失败 task_id=%d", assignment_task_id)
         raise
@@ -131,6 +132,12 @@ def submit_for_grading(self, assignment_task_id: int, ocr_data: list[dict]):
     )
     return {"assignment_task_id": assignment_task_id, "status": "dispatched"}
 
+def _clear_old_question_results(assignment_task_id: int):
+    SessionLocal = _get_session_local()
+    with SessionLocal() as session:
+        repo = QuestionResultRepositorySync(session)
+        repo.delete_by_task_id(assignment_task_id)
+        session.commit()
 
 # ===========================================================================
 # 单题评分任务（Chord 内的并行单元）

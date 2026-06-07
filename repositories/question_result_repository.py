@@ -3,7 +3,7 @@ QuestionResult 数据访问层
 
 创建者：童天宇
 """
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -48,3 +48,10 @@ class QuestionResultRepositorySync:
         )
         result = self.session.execute(stmt)
         return list(result.scalars().all())
+
+    def delete_by_task_id(self, task_id):
+        stmt = (
+            delete(QuestionResult)
+            .where(QuestionResult.task_id == task_id)
+        )
+        self.session.execute(stmt)

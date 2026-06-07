@@ -39,9 +39,9 @@ def _normalize_grading_result(raw: dict, full_score: float) -> dict:
     return {
         "is_correct": is_correct,
         "score": score,
-        "error_reason": str(raw.get("error_reason", "")),
-        "correct_answer": str(raw.get("correct_answer", "")),
-        "comment": str(raw.get("comment", "")),
+        "error_reason": str(raw.get("error_reason", "").replace("※", "\\")),
+        "correct_answer": str(raw.get("correct_answer", "").replace("※", "\\")),
+        "comment": str(raw.get("comment", "").replace("※", "\\")),
     }
 
 
@@ -220,6 +220,7 @@ class GradingStrategyFactory:
                 return MultimodalGradingStrategy()
             return TextOnlyGradingStrategy()
 
+        # TODO: 需要斟酌如何获取到当前是百度智能批阅复核还是普通OCR切题后批阅，当前默认使用百度智能批阅复核
         if config.BAIDU_HOMEWORK_LLM_REVIEW:
             return BaiduLLMGradingStrategy()
 

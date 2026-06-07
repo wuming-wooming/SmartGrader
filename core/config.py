@@ -70,6 +70,7 @@ BAIDU_HOMEWORK_ENABLED = os.getenv("BAIDU_HOMEWORK_ENABLED", "true") == "true"
 BAIDU_HOMEWORK_POLL_TIMEOUT = int(os.getenv("BAIDU_HOMEWORK_POLL_TIMEOUT", "180"))
 BAIDU_HOMEWORK_POLL_INTERVAL = float(os.getenv("BAIDU_HOMEWORK_POLL_INTERVAL", "2.0"))
 BAIDU_HOMEWORK_LLM_REVIEW = os.getenv("BAIDU_HOMEWORK_LLM_REVIEW", "true") == "true"
+BAIDU_HOMEWORK_AUTO_REVIEW = os.getenv("BAIDU_HOMEWORK_AUTO_REVIEW", "false") == "true"
 
 # ---------- LLM 批改策略配置 ----------
 LLM_GRADING_STRATEGY = os.getenv("LLM_GRADING_STRATEGY", "multimodal")  # "text_only" | "multimodal"
