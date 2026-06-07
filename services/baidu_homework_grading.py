@@ -99,7 +99,7 @@ class BaiduHomeworkGradingAPI:
             result = resp.json()
 
             error_code = result.get("error_code")
-            if error_code and error_code != 0:
+            if error_code and error_code != 0 and error_code != 60:
                 error_msg = result.get("error_msg", str(result))
                 raise RuntimeError(f"百度作业批改查询失败 (error_code={error_code}): {error_msg}")
 
@@ -142,6 +142,7 @@ class BaiduHomeworkGradingAPI:
           - baidu_is_correct: 百度判定对错
           - baidu_comment: 百度批注/解析
           - full_score: 满分
+          - crop_url: 截图 URL
         """
         data = raw_result.get("data", {}) or raw_result.get("result", {}) or raw_result
         questions_raw = (
@@ -209,6 +210,7 @@ class BaiduHomeworkGradingAPI:
             comment.append(str(i + 1) + ". " + slot.get("reason", ""))
         baidu_comment = "\n".join(comment)
         full_score = q.get("full_score", 0) or q.get("total_score", 0) or grading.get("full_score", 0) or 0
+        cropUrl = q.get("cropUrl")
 
         return {
             "text": text.strip(),
@@ -219,6 +221,7 @@ class BaiduHomeworkGradingAPI:
             "baidu_is_correct": int(baidu_is_correct),
             "baidu_comment": str(baidu_comment),
             "full_score": float(full_score) if full_score else 0.0,
+            "crop_url": cropUrl,
         }
 
     @staticmethod

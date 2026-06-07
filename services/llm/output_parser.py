@@ -39,6 +39,12 @@ def _extract_json(text: str) -> dict:
     text = re.sub(r",\s*}", "}", text)
     text = re.sub(r",\s*]", "]", text)
 
+    # # 处理LaTeX格式中的'\'，防止JSON解析失败
+    # text = re.sub(r"\\", "\\\\", text)
+
+    # 替换反斜杠，防止JSON解析失败
+    text = re.sub(r"\\", "※", text)
+
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -60,9 +66,10 @@ def parse_grading_result(raw_text: str, full_score: float) -> GradingResult:
     return GradingResult(
         is_correct=is_correct,
         score=score,
-        error_reason=str(data.get("error_reason", "")),
-        correct_answer=str(data.get("correct_answer", "")),
-        comment=str(data.get("comment", "")),
+        # 还原反斜杠
+        error_reason=str(data.get("error_reason", "").replace("※", "\\")),
+        correct_answer=str(data.get("correct_answer", "").replace("※", "\\")),
+        comment=str(data.get("comment", "").replace("※", "\\")),
     )
 
 

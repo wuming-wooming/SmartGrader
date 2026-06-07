@@ -163,3 +163,12 @@ async def get_baidu_homework_result(
         if report
         else None,
     )
+
+# TODO: 手动启动复核，允许更改每题的分数，分离百度智能批阅与LLM复核
+@router.post("/review", summary="启动批阅结果复核")
+async def review_baidu_homework(
+    task_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    pass

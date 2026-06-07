@@ -3,8 +3,9 @@ QuestionResult 数据访问层
 
 创建者：童天宇
 """
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from models.question_result import QuestionResult
 
@@ -27,3 +28,30 @@ class QuestionResultRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+
+class QuestionResultRepositorySync:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def create(self, **kwargs) -> QuestionResult:
+        qr = QuestionResult(** kwargs)
+        self.session.add(qr)
+        self.session.flush() # 同步 flush
+        return qr
+
+    def get_by_task(self, task_id: int) -> list[QuestionResult]:
+        stmt = (
+            select(QuestionResult)
+            .where(QuestionResult.task_id == task_id)
+            .order_by(QuestionResult.page_num, QuestionResult.question_index)
+        )
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    def delete_by_task_id(self, task_id):
+        stmt = (
+            delete(QuestionResult)
+            .where(QuestionResult.task_id == task_id)
+        )
+        self.session.execute(stmt)
