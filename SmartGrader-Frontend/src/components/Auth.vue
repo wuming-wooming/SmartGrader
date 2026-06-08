@@ -5,6 +5,12 @@
       <el-tabs v-model="activeTab" class="auth-tabs">
         <el-tab-pane label="登录" name="login">
           <el-form :model="loginForm" @submit.prevent="handleLogin" :rules="rules" ref="loginFormRef">
+            <el-form-item prop="routeType">
+              <el-radio-group v-model="loginForm.routeType" class="route-group">
+                <el-radio-button label="default">默认路线</el-radio-button>
+                <el-radio-button label="baidu">百度路线</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
             <el-form-item prop="username">
               <el-input v-model="loginForm.username" placeholder="用户名" prefix-icon="User" />
             </el-form-item>
@@ -52,7 +58,8 @@ const loading = ref(false)
 
 const loginForm = reactive({
   username: '',
-  password: ''
+  password: '',
+  routeType: 'default'
 })
 
 const registerForm = reactive({
@@ -80,7 +87,7 @@ const handleLogin = async () => {
     })
     localStorage.setItem('token', res.access_token)
     
-    emit('login-success', { username: loginForm.username })
+    emit('login-success', { username: loginForm.username, routeType: loginForm.routeType })
     ElMessage.success('登录成功')
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '登录失败')
@@ -126,6 +133,17 @@ const handleRegister = async () => {
   text-align: center;
   margin-bottom: 20px;
   color: #303133;
+}
+.route-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.route-group .el-radio-button {
+  flex: 1;
+}
+:deep(.route-group .el-radio-button__inner) {
+  width: 100%;
 }
 .submit-btn {
   width: 100%;

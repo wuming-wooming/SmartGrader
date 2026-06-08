@@ -83,7 +83,7 @@ const fetchResult = async () => {
     if (!props.taskId) return
     loading.value = true
     try {
-        const res: any = await api.get(`/grading/result/${props.taskId}`)
+        const res: any = await api.get(`/baidu-homework/result/${props.taskId}`)
         const data = res.data || res
         console.info(data)
 
