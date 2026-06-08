@@ -107,7 +107,7 @@ def _after_all_crops_downloaded(results, assignment_task_id: int, only_split: bo
     logger.info("所有切图下载完成，共 %d 个任务，开始触发LLM复核", len(results))
     if not only_split and BAIDU_HOMEWORK_LLM_REVIEW and BAIDU_HOMEWORK_AUTO_REVIEW:
         import asyncio
-        trigger_llm_review.delay(assignment_task_id)
+        trigger_llm_review(assignment_task_id)
     else:
         logger.info("only_split为True或LLM复核未启用，跳过复核")
 
@@ -174,7 +174,7 @@ def _backfill_baidu_grading(db, assignment_task_id: int, questions: list[dict]):
     db.commit()
     logger.info("百度批改结果已回填 task_id=%d count=%d", assignment_task_id, min(len(rows), len(questions)))
 
-@celery_app.task(bind=True, name="baidu_homework_grading_task")
+# @celery_app.task(bind=True, name="baidu_homework_grading_task")
 def trigger_llm_review(assignment_task_id: int):
     """触发 LLM 复核批阅（复用现有 Chord 管线）"""
     from repositories.question_result_repository import QuestionResultRepository
@@ -270,7 +270,7 @@ def baidu_homework_grading_task(self, assignment_task_id: int, image_path: str,
         else:
             # 没有切图需要下载，直接决定是否触发复核
             if not only_split and BAIDU_HOMEWORK_LLM_REVIEW and BAIDU_HOMEWORK_AUTO_REVIEW:
-                trigger_llm_review.delay(assignment_task_id)
+                trigger_llm_review(assignment_task_id)
 
         return {"status": "success", "task_id": assignment_task_id, "questions_saved": saved_count}
 

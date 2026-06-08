@@ -92,6 +92,7 @@ const fetchResult = async () => {
   try {
     const res: any = await api.get(`/grading/result/${props.taskId}`)
     const data = res.data || res
+    console.info(data)
     
     result.value = {
       total_score: data.report?.total_score || 0,
@@ -104,6 +105,7 @@ const fetchResult = async () => {
         comment: q.comment
       }))
     }
+    console.info(result.value)
   } catch (error) {
     ElMessage.error('获取结果失败')
     console.error(error)
