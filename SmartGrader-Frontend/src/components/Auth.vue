@@ -40,6 +40,14 @@
           </el-form>
         </el-tab-pane>
       </el-tabs>
+
+      <el-divider />
+      <div class="demo-entry">
+        <el-button link type="info" @click="$emit('start-presentation')">
+          <el-icon><VideoPlay /></el-icon>
+          进入演示模式
+        </el-button>
+      </div>
     </el-card>
   </div>
 </template>
@@ -51,6 +59,7 @@ import api from '../utils/api'
 
 const emit = defineEmits<{
   (e: 'login-success', user: any): void
+  (e: 'start-presentation'): void
 }>()
 
 const activeTab = ref('login')
@@ -147,5 +156,8 @@ const handleRegister = async () => {
 }
 .submit-btn {
   width: 100%;
+}
+.demo-entry {
+  text-align: center;
 }
 </style>

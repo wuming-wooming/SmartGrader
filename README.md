@@ -43,6 +43,7 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 ```bash
 celery -A core.celery_app worker --pool solo --concurrency 2 --loglevel INFO
+celery -A core.celery_app worker --pool prefork --concurrency 2 --loglevel INFO
 ```
 
 > ⚠️ 必须先启动 Redis 和 MySQL，API 才会正常初始化。

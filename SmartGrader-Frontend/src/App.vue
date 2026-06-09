@@ -3,6 +3,7 @@
     <Auth v-if="currentView === 'auth'" @login-success="handleLoginSuccess" />
     <Workspace v-else-if="currentView === 'workspace' && currentRouteType === 'default'" :user="currentUser" @logout="handleLogout" />
     <BaiduWorkspace v-else-if="currentView === 'workspace' && currentRouteType === 'baidu'" :user="currentUser" @logout="handleLogout" />
+    <PresentationView v-else-if="currentView === 'presentation'" @exit="handleExitPresentation" />
   </div>
 </template>
 
@@ -11,9 +12,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import Auth from './components/Auth.vue'
 import Workspace from './components/Workspace.vue'
 import BaiduWorkspace from './components/BaiduWorkspace.vue'
+import PresentationView from './components/presentation/PresentationView.vue'
 import api from './utils/api'
 
-const currentView = ref<'auth' | 'workspace'>('auth')
+const currentView = ref<'auth' | 'workspace' | 'presentation'>('auth')
 const currentUser = ref<any>(null)
 const currentRouteType = ref<'default' | 'baidu'>('default')
 
@@ -73,6 +75,14 @@ const handleLogout = () => {
 
 const handleAuthExpired = () => {
   handleLogout()
+}
+
+const handleStartPresentation = () => {
+  currentView.value = 'presentation'
+}
+
+const handleExitPresentation = () => {
+  currentView.value = 'auth'
 }
 
 onMounted(() => {
