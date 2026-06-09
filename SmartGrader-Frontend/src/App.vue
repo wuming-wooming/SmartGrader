@@ -1,7 +1,8 @@
 <template>
   <div id="app">
     <Auth v-if="currentView === 'auth'" @login-success="handleLoginSuccess" />
-    <Workspace v-else-if="currentView === 'workspace'" :user="currentUser" @logout="handleLogout" />
+    <Workspace v-else-if="currentView === 'workspace' && currentRouteType === 'default'" :user="currentUser" @logout="handleLogout" />
+    <BaiduWorkspace v-else-if="currentView === 'workspace' && currentRouteType === 'baidu'" :user="currentUser" @logout="handleLogout" />
   </div>
 </template>
 
@@ -9,10 +10,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import Auth from './components/Auth.vue'
 import Workspace from './components/Workspace.vue'
+import BaiduWorkspace from './components/BaiduWorkspace.vue'
 import api from './utils/api'
 
 const currentView = ref<'auth' | 'workspace'>('auth')
 const currentUser = ref<any>(null)
+const currentRouteType = ref<'default' | 'baidu'>('default')
 
 const checkAuth = async () => {
   const token = localStorage.getItem('token')
@@ -43,21 +46,29 @@ const checkAuth = async () => {
     }
 
     currentUser.value = { username }
+    currentRouteType.value = (localStorage.getItem('routeType') as 'default' | 'baidu') || 'default'
     currentView.value = 'workspace'
   } catch (error) {
     // 静默处理，不输出错误日志
     localStorage.removeItem('token')
+    localStorage.removeItem('routeType')
     currentView.value = 'auth'
   }
 }
 
-const handleLoginSuccess = () => {
+const handleLoginSuccess = (data: any) => {
+  if (data.routeType) {
+    localStorage.setItem('routeType', data.routeType)
+  } else {
+    localStorage.setItem('routeType', 'default')
+  }
   checkAuth()
 }
 
 const handleLogout = () => {
   currentView.value = 'auth'
   currentUser.value = null
+  localStorage.removeItem('routeType')
 }
 
 const handleAuthExpired = () => {
