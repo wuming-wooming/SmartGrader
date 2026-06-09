@@ -38,9 +38,9 @@
                                     :preview-src-list="[getImageUrl(item.question_image)]" fit="contain" />
                             </div>
                             <div class="text-box">
-                                <p><strong>识别文本：</strong> {{ item.recognized_text }}</p>
-                                <p><strong>正确答案：</strong> {{ item.correct_answer }}</p>
-                                <p><strong>批注：</strong> {{ item.comment }}</p>
+                                <p v-if="item.recognized_text"><strong>识别文本：</strong> {{ item.recognized_text }}</p>
+                                <p v-if="item.correct_answer"><strong>正确答案：</strong> {{ item.correct_answer }}</p>
+                                <p v-if="item.comment"><strong>批注：</strong> {{ item.comment }}</p>
                             </div>
                         </div>
                     </el-collapse-item>
