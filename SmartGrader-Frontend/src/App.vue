@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <Auth v-if="currentView === 'auth'" @login-success="handleLoginSuccess" />
+    <Auth v-if="currentView === 'auth'" @login-success="handleLoginSuccess" @start-presentation="handleStartPresentation" />
     <Workspace v-else-if="currentView === 'workspace' && currentRouteType === 'default'" :user="currentUser" @logout="handleLogout" />
     <BaiduWorkspace v-else-if="currentView === 'workspace' && currentRouteType === 'baidu'" :user="currentUser" @logout="handleLogout" />
     <PresentationView v-else-if="currentView === 'presentation'" @exit="handleExitPresentation" />
