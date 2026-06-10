@@ -116,7 +116,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { presentationSlides } from '../../data/presentation'
-import type { Slide, ContentBlock } from '../../data/presentation'
+import type { Slide } from '../../data/presentation'
 import SlideContent from './SlideContent.vue'
 import FloatingImage from './FloatingImage.vue'
 
