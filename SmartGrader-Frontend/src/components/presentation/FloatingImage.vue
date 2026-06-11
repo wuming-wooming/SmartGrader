@@ -9,16 +9,18 @@
     ]"
   >
     <el-image
-      :src="src"
+      :src="getImageUrl(src)"
       :alt="alt || ''"
       fit="contain"
-      :preview-src-list="[src]"
+      :preview-src-list="[getImageUrl(src)]"
       lazy
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import {baseURL} from "../../utils/api";
+
 withDefaults(
   defineProps<{
     src: string
@@ -33,6 +35,13 @@ withDefaults(
     animate: 'none',
   }
 )
+
+const getImageUrl = (url: string) => {
+    if (!url) return ''
+    if (url.startsWith('http')) return url
+    const cleanUrl = url.startsWith('/') ? url.slice(1) : url
+    return `${baseURL}/${cleanUrl}`
+}
 </script>
 
 <style scoped>

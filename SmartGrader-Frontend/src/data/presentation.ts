@@ -387,16 +387,16 @@ export const presentationSlides: Slide[] = [
       {
         type: 'bullet', text: '工作划分：',
         children: [
-          { type: 'bullet', text: '童天宇（组长）：系统架构、技术选型、认证模块、LLM 批阅、架构演进重构、Bugfix' },
-          { type: 'bullet', text: '罗東明：OCR 识别核心、切题算法改进、图片获取接口、联调测试、Bugfix' },
-          { type: 'bullet', text: '周康哲：本地图像处理与保存、前端构建与前后端适配' },
+          { type: 'bullet', text: '童天宇（组长）：系统架构、技术选型、认证模块、LLM 批阅、架构演进重构' },
+          { type: 'bullet', text: '罗東明：OCR 识别核心、切题算法改进、图片获取接口、联调测试' },
+          { type: 'bullet', text: '周康哲：图片清洗与持久化模块、前端全部页面、前后端对接与测试' },
         ],
       },
       {
         type: 'bullet', text: '项目统计（截至6月9日）：',
         children: [
           { type: 'bullet', text: 'Python 文件数：50+' },
-          { type: 'bullet', text: '总代码量：16,000+ 行（Python 约 80%）' },
+          { type: 'bullet', text: '总代码量：18,000+ 行（Python 约 80%）' },
           { type: 'bullet', text: '总提交数：55' },
           { type: 'bullet', text: '合并 PR 数：12' },
           { type: 'bullet', text: '项目周期：5月13日 — 6月9日（约4周）' },
@@ -406,9 +406,34 @@ export const presentationSlides: Slide[] = [
     speakerNotes: '略讲 — 展示团队分工和项目规模',
   },
 
-  // ==================== 第14页：致谢 ====================
+  // ==================== 第14页：远端Git仓库统计 ====================
   {
     id: 14,
+    title: '远端Git仓库统计',
+    layout: 'content',
+    contents: [
+      {
+        type: 'bullet', text: '项目仓库：',
+        children: [
+          { type: 'bullet', text: 'GitHub：https://github.com/wuming-wooming/SmartGrader' },
+        ],
+      },
+    ],
+    images:[
+      {
+        src: 'res/img/gitInfo.png',
+        alt: 'GitHub 统计信息',
+        position: 'center',
+        size: 'large',
+        animate: 'fade-in'
+      }
+    ],
+    speakerNotes: '略讲 — 展示远端统计数据',
+  },
+
+  // ==================== 第15页：致谢 ====================
+  {
+    id: 15,
     title: '',
     layout: 'end',
     contents: [

@@ -129,6 +129,7 @@ async def get_task_result(
                 page_num=q.page_num,
                 subject=q.subject,
                 question_text=q.question_text,
+                question_image=q.question_image,
                 is_correct=q.is_correct,
                 score=float(q.score),
                 full_score=float(q.full_score),

@@ -70,6 +70,7 @@ class QuestionResultItem(BaseModel):
     page_num: int
     subject: str
     question_text: str | None = None
+    question_image: str | None = None
     is_correct: int
     score: float
     full_score: float
